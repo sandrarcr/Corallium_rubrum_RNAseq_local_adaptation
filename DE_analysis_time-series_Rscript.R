@@ -56,6 +56,7 @@ coldata$population <- factor(coldata$population)
 coldata$Individual <- factor(coldata$Individual)
 
 # Sneha: So here you have all the data from all populations and individuals right? Just a note cuz I remember, population/ individuals had an effect in your data that you are not accounting for here
+#Yes, all data is here. I did not subset anything. Please see code for DE_analysis_top-down_Rscript.R
 dds_time <- DESeqDataSetFromMatrix(countData = cts1, colData = coldata1, design = ~day + treatment + day:treatment) #full model
 
 #day: This variable represents the time points or days at which the experiment was conducted. 
@@ -122,6 +123,8 @@ day2_treat <- colMeans(mod_mat[dds_LRT$day == "2" & dds_LRT$treatment == "Treatm
 
 #Sneha:So while calling results you need to specify to run wald test. Otherwise the results are based on the LRT test. - See email for explanation. You can run the results with and without specifying the wald test and then see for yourself what actual comparison is being done by just printing out the results (i.e res = results(dds,...) 
                                                                                                                                                                                                                                                                                                                         #  res - and see that without specifying test=Wald the results are comparing the full vs reduced model) 
+#done - Idk why I thought test = "Wald" was the default
+
 #Overall results
 res <-results(dds_LRT, alpha = 0.05, test = "Wald") #general results including all ind and counts. differential expression results for all comparisons or contrasts included in your model. This includes the fold changes, p-values, and adjusted p-values (if applicable) for each gene in the dataset.
 res
@@ -129,6 +132,7 @@ res
 res <- res[res$baseMean > 10, ]
 summary(res) #day_1_vs_0": This represents the comparison between day 1 and day 0, 
 #Sneha - I don't follow this(the two lines above). YOu haven't specified any particular contrast here. So what are you comparing? 
+# Yep. For overall results.
 
 #day 1 vs 0 in the control
 res1 <- results(dds_LRT, alpha = 0.05, contrast = day1_control - day0_control, test = "Wald")
@@ -197,7 +201,7 @@ res7 <- results(dds_LRT, alpha = 0.05, contrast = day2_treat - day2_control, tes
 res7 <- results(dds_LRT, alpha = 0.05, contrast = list(c("treatment_Treatment_vs_Control", 
                                        "day2.treatmentTreatment")), test = "Wald")
 res7
-#filter baseMean genes > 10
+#Sandra -- filter baseMean genes > 10 --> did this with all results in every code.
 res7 <- res7[res7$baseMean > 10, ]
 summary(res7) 
 
@@ -224,7 +228,7 @@ summary(res9) #"day2.treatmentTreatment": This represents the interaction term b
 #testing the difference in gene expression between the treatment group and the control group at day 2.
 
 #save results:
-save(res, file = "res.RData") #Sneha - So this is not any pairwise comparison right.. its just the overall. Good to keep this to extract normalized counts while plotting figures later as it accounts for all the factors in your dataset.  
+save(res, file = "res.RData") #Sandra-- Yes :) -- Sneha - So this is not any pairwise comparison right.. its just the overall. Good to keep this to extract normalized counts while plotting figures later as it accounts for all the factors in your dataset.  
 save(res1, file = "res1vs0_control.RData")
 save(res2, file = "res1cs0_treat.RData")
 save(res3, file = "res2vs0_control.RData")
@@ -390,6 +394,7 @@ write.csv(sig10,file="diff_genes_int_2vs0_T_crubrum.csv") #save as cvs file
 
 #visualization 
 #Sneha - I am assuming all the heatmaps and PCA was to check for outliers (and hence should have been done before you ran all the pairwise tests). 
+#Sandra -- hmmm, maybe we need to discuss this as I am not sure :') 
 
 rld <- rlog(dds_LRT, blind = FALSE)
 save(rld, file = "rld_timeseries.RData")
