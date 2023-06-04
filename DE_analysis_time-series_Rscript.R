@@ -59,6 +59,10 @@ coldata$Individual <- factor(coldata$Individual)
 #Yes, all data is here. I did not subset anything. Please see code for DE_analysis_top-down_Rscript.R
 dds_time <- DESeqDataSetFromMatrix(countData = cts1, colData = coldata1, design = ~day + treatment + day:treatment) #full model
 
+#Sneha: I would just add the interaction term between population,treatment,time here in the design. So the design will be ~day + treatment + day:treatment + treatment:population
+        # and your reduced model will not have the interaction treatment:population.
+        # So now you will have all the comparison options when you call resultNames and you just have to add the specific pairwise comparison to see if the effect of treatment on gene expression is differnet between the two populations
+
 #day: This variable represents the time points or days at which the experiment was conducted. 
 #It suggests that you have measured gene expression at different time points and want to account 
 #for any time-dependent effects on gene expression.
