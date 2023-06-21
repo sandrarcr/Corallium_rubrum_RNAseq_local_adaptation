@@ -55,13 +55,7 @@ coldata$day <- factor(coldata$day)
 coldata$population <- factor(coldata$population)
 coldata$Individual <- factor(coldata$Individual)
 
-# Sneha: So here you have all the data from all populations and individuals right? Just a note cuz I remember, population/ individuals had an effect in your data that you are not accounting for here
-#Yes, all data is here. I did not subset anything. Please see code for DE_analysis_top-down_Rscript.R
-dds_time <- DESeqDataSetFromMatrix(countData = cts1, colData = coldata1, design = ~day + treatment + day:treatment) #full model
-
-#Sneha: I would just add the interaction term between population and treatment here in the design. So the design will be ~day + treatment + day:treatment + treatment:population
-        # and your reduced model will not have the interaction treatment:population.
-        # So now you will have all the comparison options when you call resultNames and you just have to add the specific pairwise comparison to see if the effect of treatment on gene expression is differnet between the two populations
+dds_time <- DESeqDataSetFromMatrix(countData = cts1, colData = coldata1, design = ~day + treatment + day:treatment + treatment:population) #full model
 
 #day: This variable represents the time points or days at which the experiment was conducted. 
 #It suggests that you have measured gene expression at different time points and want to account 
@@ -73,7 +67,9 @@ dds_time <- DESeqDataSetFromMatrix(countData = cts1, colData = coldata1, design 
 #In other words, it allows you to identify genes that show different responses to treatment at different time points.
 
 #factors
-dds_time$day <- factor(dds_time$day, levels = c("0","1","2"))
+dds_time$day <- factor(dds_time$day, levels = c("0","1","2")) #we set these factors as we do want to see the diff exp genes across the time of treatment
+#taking into account all factors playing
+dds_time$population <- factor(dds_time$population, levels = c("CAS", "LOP"))
 
 # Remove genes which have at least 10 reads in all samples
 keep <- rowSums(counts(dds_time)) >= 10
@@ -81,20 +77,26 @@ dds_time <- dds_time[keep,]
 
 ######## Run Differential expression Analysis
 
-dds_LRT <- DESeq(dds_time, test="LRT", reduced = ~ day + treatment) #reduced --The LRT examines two 
+dds_LRT <- DESeq(dds_time, test="LRT", reduced = ~ day + treatment + day:treatment) #reduced --The LRT examines two 
 #models for the counts, a full model with a certain number of terms and a reduced model,
 #in which some of the terms of the full model are removed. The test determines if the 
 #increased likelihood of the data using the extra terms in the full model is more than 
 #expected if those extra terms are truly zero. The LRT is therefore useful for testing 
 #multiple terms at once, for example testing 3 or more levels of a factor at once, or
-#all interactions between two variables. o
+#all interactions between two variables.
+# you would need to decide which terms or interactions you want to test for significance 
+#by removing them from the full model. In this case, let's say you want to test the 
+#significance of the interaction term day:treatment while keeping all other terms.
+#so you do: ~day:treatment + treatment:population
 
 save(dds_LRT, file = "dds_lrt.RData")
 #load(file = "C:/Users/Joaquim Garrabou/OneDrive - Universitat de Barcelona/Doctorado/ICM/Tesis/Chap2/RNA-Seq/DESeq2/15. dds~pop+day+pop-day(timeseries)/dds_lrt_time.RData")
 
+#Sandra- these are the new comparisons that appear when I include your suggestion in the design:
+
 resultsNames(dds_LRT)
-#[1] "Intercept"                      "day_1_vs_0"                     "day_2_vs_0"                    
-#[4] "treatment_Treatment_vs_Control" "day1.treatmentTreatment"        "day2.treatmentTreatment"     
+#[1] "Intercept"                        "day_1_vs_0"                       "day_2_vs_0"                       "treatment_Treatment_vs_Control"  
+#[5] "day1.treatmentTreatment"          "day2.treatmentTreatment"          "treatmentControl.populationLOP"   "treatmentTreatment.populationLOP"
 
 #"Intercept": This represents the baseline or reference level of gene expression when all variables in the model are at 
 #their reference levels.
@@ -106,6 +108,8 @@ resultsNames(dds_LRT)
 #whether the effect of treatment on gene expression is different at day 1 compared to the reference level (day 0).
 #"day2.treatmentTreatment": This represents the interaction effect between day 2 and the treatment condition. It examines 
 #whether the effect of treatment on gene expression is different at day 2 compared to the reference level (day 0).
+#"treatmentControl.populationLOP": This represents the interaction between the treatment group and the population level "LOP" in the "Control" condition.
+#"treatmentTreatment.populationLOP": This represents the interaction between the treatment group and the population level "LOP" in the "Treatment" condition.
 
 #Tutorial: https://github.com/tavareshugo/tutorial_DESeq2_contrasts/blob/main/DESeq2_contrasts.md
 #Two factors with two and three levels and interactions
@@ -122,23 +126,29 @@ day0_control <- colMeans(mod_mat[dds_LRT$day == "0" & dds_LRT$treatment == "Cont
 day0_treat <- colMeans(mod_mat[dds_LRT$day == "0" & dds_LRT$treatment == "Treatment", ])
 day2_control <- colMeans(mod_mat[dds_LRT$day == "2" & dds_LRT$treatment == "Control", ])
 day2_treat <- colMeans(mod_mat[dds_LRT$day == "2" & dds_LRT$treatment == "Treatment", ])
+LOP_control <- colMeans(mod_mat[dds_LRT$population == "LOP" & dds_LRT$treatment == "Control", ])
+LOP_treat <- colMeans(mod_mat[dds_LRT$population == "LOP" & dds_LRT$treatment == "Treatment", ])
+LOP_0 <- colMeans(mod_mat[dds_LRT$population == "LOP" & dds_LRT$day == "0", ])
+LOP_1 <- colMeans(mod_mat[dds_LRT$population == "LOP" & dds_LRT$day == "1", ])
+LOP_2 <- colMeans(mod_mat[dds_LRT$population == "LOP" & dds_LRT$day == "2", ])
+CAS_control <- colMeans(mod_mat[dds_LRT$population == "CAS" & dds_LRT$treatment == "Control"])
+CAS_treat <- colMeans(mod_mat[dds_LRT$population == "CAS" & dds_LRT$treatment == "Treatment", ])
+CAS_0 <- colMeans(mod_mat[dds_LRT$population == "CAS" & dds_LRT$day == "0", ])
+CAS_1 <- colMeans(mod_mat[dds_LRT$population == "CAS" & dds_LRT$day == "1", ])
+CAS_2 <- colMeans(mod_mat[dds_LRT$population == "CAS" & dds_LRT$day == "2", ])
 
 #obtain results from dds object
 
-#Sneha:So while calling results you need to specify to run wald test. Otherwise the results are based on the LRT test. - See email for explanation. You can run the results with and without specifying the wald test and then see for yourself what actual comparison is being done by just printing out the results (i.e res = results(dds,...) 
-                                                                                                                                                                                                                                                                                                                        #  res - and see that without specifying test=Wald the results are comparing the full vs reduced model) 
-#done - Idk why I thought test = "Wald" was the default
+#Sandra - here i'm a bit confused about what i'm obtaining.... I'm using contrasts for each as DESeq2 tutorial suggests, but i'm still unsure... :'(
 
-#Overall results
+###Overall results
 res <-results(dds_LRT, alpha = 0.05, test = "Wald") #general results including all ind and counts. differential expression results for all comparisons or contrasts included in your model. This includes the fold changes, p-values, and adjusted p-values (if applicable) for each gene in the dataset.
 res
 #filter baseMean genes > 10
 res <- res[res$baseMean > 10, ]
 summary(res) #day_1_vs_0": This represents the comparison between day 1 and day 0, 
-#Sneha - I don't follow this(the two lines above). YOu haven't specified any particular contrast here. So what are you comparing? 
-# Yep. For overall results.
 
-#day 1 vs 0 in the control
+###day 1 vs 0 in the control
 res1 <- results(dds_LRT, alpha = 0.05, contrast = day1_control - day0_control, test = "Wald")
 # or equivalently
 res1 <- results(dds_LRT, alpha = 0.05, contrast = list("day_1_vs_0"), test = "Wald")
@@ -148,7 +158,7 @@ res1 <- res1[res1$baseMean > 10, ]
 summary(res1) #day_1_vs_0": This represents the comparison between day 1 and day 0, 
 #specifically testing the difference in gene expression between these two time points.
 
-#day 1 vs 0 (in the Treatment):
+###day 1 vs 0 (in the Treatment):
 res2 <- results(dds_LRT, alpha = 0.05, contrast = day1_treat - day0_treat, test = "Wald")
 # or equivalently
 res2 <- results(dds_LRT, alpha = 0.05, contrast = list(c("day_1_vs_0",
@@ -158,7 +168,7 @@ res2
 res2 <- res2[res2$baseMean > 10, ]
 summary(res2) 
 
-#day 2 vs 0 (in control)
+###day 2 vs 0 (in control)
 res3 <- results(dds_LRT, alpha = 0.05, contrast = day2_control - day0_control, test = "Wald")
 # or equivalently
 res3 <- results(dds_LRT, alpha = 0.05,  contrast = list("day_2_vs_0"), test = "Wald")
@@ -168,7 +178,7 @@ res3 <- res3[res3$baseMean > 10, ]
 summary(res3) #"day_2_vs_0": This represents the comparison between day 2 and day 0, 
 #testing the difference in gene expression between these two time points.
 
-#day 2 vs 0 (in the Treatment):
+###day 2 vs 0 (in the Treatment):
 res4 <- results(dds_LRT, alpha = 0.05, contrast = day2_treat - day0_treat, test = "Wald")
 # or equivalently
 res4 <- results(dds_LRT, alpha = 0.05, contrast = list(c("day_2_vs_0",
@@ -178,7 +188,7 @@ res4
 res4 <- res4[res4$baseMean > 10, ]
 summary(res4) 
 
-#Treatment vs Control (for day0):
+###Treatment vs Control (for day0):
 res5 <- results(dds_LRT, alpha = 0.05, contrast = day0_treat - day0_control, test = "Wald")
 # or equivalently
 res5 <- results(dds_LRT, contrast = list(c("treatment_Treatment_vs_Control")), test = "Wald")
@@ -189,7 +199,7 @@ summary(res5) #treatment_Treatment_vs_Control": This represents the comparison b
 #treatment group and the control group, specifically examining the difference in gene expression 
 #between these two conditions.
 
-#Treatment vs Control (for day 1):
+###Treatment vs Control (for day 1):
 res6 <- results(dds_LRT, alpha = 0.05, contrast = day1_treat - day1_control, test = "Wald")
 # or equivalently
 res6 <- results(dds_LRT, alpha = 0.05, contrast = list(c("treatment_Treatment_vs_Control", 
@@ -199,17 +209,17 @@ res6
 res6 <- res6[res6$baseMean > 10, ]
 summary(res6) 
 
-##Treatment vs Control (for day 2):
+###Treatment vs Control (for day 2):
 res7 <- results(dds_LRT, alpha = 0.05, contrast = day2_treat - day2_control, test = "Wald")
 # or equivalently
 res7 <- results(dds_LRT, alpha = 0.05, contrast = list(c("treatment_Treatment_vs_Control", 
                                        "day2.treatmentTreatment")), test = "Wald")
 res7
-#Sandra -- filter baseMean genes > 10 --> did this with all results in every code.
+#filter baseMean genes > 10
 res7 <- res7[res7$baseMean > 10, ]
 summary(res7) 
 
-#Interaction between day and condition (i.e. do day0, 1 and 2 respond differently to the treatment?):
+###Interaction between day and condition (i.e. do day0, 1 and 2 respond differently to the treatment?):
 
 #day 1 and 0 respond differently to treatment?
 res8 <- results(dds_LRT, alpha = 0.05, contrast = (day1_treat - day1_control) - (day0_treat - day0_control), test = "Wald")
@@ -231,8 +241,83 @@ res9 <- res9[res9$baseMean > 10, ]
 summary(res9) #"day2.treatmentTreatment": This represents the interaction term between "day" and "treatment" for day 2, 
 #testing the difference in gene expression between the treatment group and the control group at day 2.
 
+### LOP
+res10 <- results(dds_LRT, alpha = 0.05, contrast = LOP_treat - LOP_control, test = "Wald")
+res10
+#filter baseMean genes > 10
+res10 <- res10[res10$baseMean > 10, ]
+summary(res10)
+
+## LOP_treatment_day0 
+
+res11 <- results(dds_LRT, alpha = 0.05, contrast = LOP_0 - LOP_treat, test = "Wald")
+res11
+#filer baseMean genes > 10
+res11 <- res11[res11$baseMean > 10, ]
+summary(res11)
+
+### LOP_treatment_day1 
+
+res12 <- results(dds_LRT, alpha = 0.05, contrast = LOP_1 - LOP_treat, test = "Wald")
+res12
+#filer baseMean genes > 10
+res12 <- res12[res12$baseMean > 10, ]
+summary(res12)
+
+### LOP_treatment_day2 
+  
+res13 <- results(dds_LRT, alpha = 0.05, contrast = LOP_1 - LOP_treat, test = "Wald")
+res13
+#filer baseMean genes > 10
+res13 <- res13[res13$baseMean > 10, ]
+summary(res13)
+  
+### CAS
+res14 <- results(dds_LRT, alpha = 0.05, contrast = CAS_treat - CAS_control, test = "Wald")
+res14
+#filter baseMean genes > 10
+res14 <- res14[res14$baseMean > 10, ]
+summary(res14)
+
+### CAS_treatment_day0 
+
+res15 <- results(dds_LRT, alpha = 0.05, contrast = CAS_0 - CAS_treat, test = "Wald")
+res15
+#filer baseMean genes > 10
+res15 <- res15[res15$baseMean > 10, ]
+summary(res15)
+
+### CAS_treatment_day1 
+
+res16 <- results(dds_LRT, alpha = 0.05, contrast = CAS_1 - CAS_treat, test = "Wald")
+res16
+#filer baseMean genes > 10
+res16 <- res16[res16$baseMean > 10, ]
+summary(res16)
+  
+### CAS_treatment_day2 
+
+res17 <- results(dds_LRT, alpha = 0.05, contrast = CAS_2 - CAS_treat, test = "Wald")
+res17
+#filer baseMean genes > 10
+res17 <- res17[res17$baseMean > 10, ]
+summary(res17)
+
+#whether CAS and LOP respond differently to Control-treatment
+
+res18 <- results(dds_LRT, alpha = 0.05, contrast = (LOP_treat - LOP_control) - (CAS_treat - CAS_control), test = "Wald")
+res18
+#filer baseMean genes > 10
+res18 <- res18[res18$baseMean > 10, ]
+summary(res18)
+
+#Sandra - In essence, I would like to obtain diff exp genes between cont-treat for LOP and CAS independently... I think I did it. Can you confirm?
+#Sandra - I would also like to obtain diff exp genes for the treatment in LOP at day 0, 1 and 2... please let me know i did it correctly - same for CAS
+#Sandra - If this is correct... then the rest should also be ok :) 
+
+
 #save results:
-save(res, file = "res.RData") #Sandra-- Yes :) -- Sneha - So this is not any pairwise comparison right.. its just the overall. Good to keep this to extract normalized counts while plotting figures later as it accounts for all the factors in your dataset.  
+save(res, file = "res.RData")  
 save(res1, file = "res1vs0_control.RData")
 save(res2, file = "res1cs0_treat.RData")
 save(res3, file = "res2vs0_control.RData")
@@ -242,6 +327,15 @@ save(res6, file = "res_treatvscontrol_1.RData")
 save(res7, file = "res_treatvscontrol_2.RData")
 save(res8, file = "res_int_1vs0_treat.RData")
 save(res9, file = "res_int_2vs0_treat.RData")
+save(res10, file = "res_LOP_treatvscontrol.RData")
+save(res11, file = "res_LOP_0_treat.RData")
+save(res12, file = "res_LOP_1_treat.RData")
+save(res13, file = "res_LOP_2_treat.RData")
+save(res14, file = "res_CAS_treatvscontrol.RData")
+save(res15, file = "res_CAS_0_treat.RData")
+save(res16, file = "res_CAS_1_treat.RData")
+save(res17, file = "res_CAS_2_treat.RData")
+save(res18, file = "res_int_LOPvsCAS_treat.RData")
 
 #load(file = "C:/Users/Joaquim Garrabou/OneDrive - Universitat de Barcelona/Doctorado/ICM/Tesis/Chap2/RNA-Seq/DESeq2/15. dds~pop+day+pop-day(timeseries)/1) treatment + day + day-treatment/resX.RData")
 
@@ -258,18 +352,27 @@ resOrdered6 <- res2[order(res6$padj),]
 resOrdered7 <- res2[order(res7$padj),]
 resOrdered8 <- res2[order(res8$padj),]
 resOrdered9 <- res2[order(res9$padj),]
+resOrdered10 <- res1[order(res10$padj),]
+resOrdered11 <- res1[order(res11$padj),]
+resOrdered12 <- res2[order(res12$padj),]
+resOrdered13 <- res2[order(res13$padj),]
+resOrdered14 <- res2[order(res14$padj),]
+resOrdered15 <- res2[order(res15$padj),]
+resOrdered16 <- res2[order(res16$padj),]
+resOrdered17 <- res2[order(res17$padj),]
+resOrdered18 <- res2[order(res18$padj),]
 
 summary(resX)
 
 ######
-plotMA(res5, ylim=c(-12,12)) #shows the log2 fold changes attributable to a given variable over the mean of normalized 
+plotMA(res16, ylim=c(-12,12)) #shows the log2 fold changes attributable to a given variable over the mean of normalized 
 #counts for all the samples in the DESeqDataSet. Points will be colored red if the adjusted p value is less 
 #than 0.1. Points which fall out of the window are plotted as open triangles pointing either up or down.
 
-plotCounts(dds_LRT, gene = which.min(res4$padj), intgroup = "treatment")
+plotCounts(dds_LRT, gene = which.min(res14$padj), intgroup = "treatment")
 #plotCounts(dds_LRT, gene = which.min(res2$padj), intgroup = "treatment")
 
-#extract data from res objects
+######## extract data from res objects
 re <- data.frame(resOrdered)
 re <- na.omit(re)
 write.csv(re,file="deseq2_general_day-C-T_crubrum.csv")
@@ -279,7 +382,7 @@ re1 <- data.frame(resOrdered1)
 re1 <- na.omit(re1)
 write.csv(re1,file="deseq2_day1vs0_C_crubrum.csv")
 
-re2 <- data.frame(resOrderedT2)
+re2 <- data.frame(resOrdered2)
 re2 <- na.omit(re2)
 write.csv(re2,file="deseq2_day1vs0_T_crubrum.csv")
 
@@ -315,7 +418,49 @@ re9 <- data.frame(resOrdered9)
 re9 <- na.omit(re9)
 write.csv(re9,file="deseq2_int_2vs0_T_crubrum.csv")
 
-#extract data which pass an adjusted p value threshold (0.05)
+#extract data from res object
+re10 <- data.frame(resOrdered10)
+re10 <- na.omit(re10)
+write.csv(re10,file="deseq2_LOP_TvsC_C_crubrum.csv")
+
+#extract data from res object
+re11 <- data.frame(resOrdered11)
+re11 <- na.omit(re11)
+write.csv(re11,file="deseq2_LOP_0_T_crubrum.csv")
+
+re12 <- data.frame(resOrdered12)
+re12 <- na.omit(re12)
+write.csv(re12,file="deseq2_LOP_1_T_crubrum.csv")
+
+#extract data from res object
+re13 <- data.frame(resOrdered13)
+re13 <- na.omit(re13)
+write.csv(re13,file="deseq2_LOP_2_T_crubrum.csv")
+
+re14 <- data.frame(resOrdered14)
+re14 <- na.omit(re14)
+write.csv(re14,file="deseq2_CAS_TvsC_crubrum.csv")
+
+#extract data from res object
+re15 <- data.frame(resOrdered15)
+re15 <- na.omit(re15)
+write.csv(re15,file="deseq2_CAS_0_T_crubrum.csv")
+
+re16 <- data.frame(resOrdered16)
+re16 <- na.omit(re16)
+write.csv(re16,file="deseq2_CAS_1_T_crubrum.csv")
+
+#extract data from res object
+re17 <- data.frame(resOrdered17)
+re17 <- na.omit(re17)
+write.csv(re17,file="deseq2_CAS_2_T_crubrum.csv")
+
+re18 <- data.frame(resOrdered18)
+re18 <- na.omit(re18)
+write.csv(re18,file="deseq2_int_LOPvsCAS_T_crubrum.csv")
+
+#### extract data which pass an adjusted p value threshold (0.05)
+
 sig=subset(re,re$padj<0.05)
 sig1=subset(sig,abs(sig$log2FoldChange)>0.3) #Log2 --> normalization of the data to minimize differences between samples due to small counts.
 
@@ -387,7 +532,6 @@ save(sig9, file = "sig2_deseq2_int_1vs0_T_crubrum.RData")#save as object
 #load(file = "sig2_C-T.RData")
 write.csv(sig9,file="diff_genes_int_1vs0_T_crubrum.csv") #save as cvs file
 
-
 #extract data which pass an adjusted p value threshold (0.05)
 sig9=subset(re9,re9$padj<0.05)
 sig10=subset(sig9,abs(sig9$log2FoldChange)>0.3) #Log2 --> normalization of the data to minimize differences between samples due to small counts.
@@ -396,9 +540,79 @@ save(sig10, file = "sig2_deseq2_int_2vs0_T_crubrum.RData")#save as object
 #load(file = "sig2_C-T.RData")
 write.csv(sig10,file="diff_genes_int_2vs0_T_crubrum.csv") #save as cvs file
 
+#extract data which pass an adjusted p value threshold (0.05)
+sig10=subset(re10,re10$padj<0.05)
+sig11=subset(sig10,abs(sig10$log2FoldChange)>0.3) #Log2 --> normalization of the data to minimize differences between samples due to small counts.
+
+save(sig11, file = "sig2_deseq2_LOP_TvsC_crubrum.RData")#save as object
+#load(file = "sig2_C-T.RData")
+write.csv(sig11,file="diff_genes_LOP_TvsC_crubrum.csv") #save as cvs file
+
+#extract data which pass an adjusted p value threshold (0.05)
+sig11=subset(re11,re11$padj<0.05)
+sig12=subset(sig11,abs(sig11$log2FoldChange)>0.3) #Log2 --> normalization of the data to minimize differences between samples due to small counts.
+
+save(sig12, file = "sig2_deseq2_LOP_0_T_crubrum.RData")#save as object
+#load(file = "sig2_C-T.RData")
+write.csv(sig12,file="diff_genes_LOP_0_T_crubrum.csv") #save as cvs file
+
+#extract data which pass an adjusted p value threshold (0.05)
+sig12=subset(re12,re12$padj<0.05)
+sig113=subset(sig12,abs(sig12$log2FoldChange)>0.3) #Log2 --> normalization of the data to minimize differences between samples due to small counts.
+
+save(sig13, file = "sig2_deseq2_LOP_1_T_crubrum.RData")#save as object
+#load(file = "sig2_C-T.RData")
+write.csv(sig13,file="diff_genes_LOP_1_T_crubrum.csv") #save as cvs file
+
+#extract data which pass an adjusted p value threshold (0.05)
+sig13=subset(re13,re13$padj<0.05)
+sig14=subset(sig13,abs(sig13$log2FoldChange)>0.3) #Log2 --> normalization of the data to minimize differences between samples due to small counts.
+
+save(sig14, file = "sig2_deseq2_LOP_2_T_crubrum.RData")#save as object
+#load(file = "sig2_C-T.RData")
+write.csv(sig14,file="diff_genes_LOP_2_T_crubrum.csv") #save as cvs file
+
+#extract data which pass an adjusted p value threshold (0.05)
+sig14=subset(re14,re14$padj<0.05)
+sig15=subset(sig14,abs(sig14$log2FoldChange)>0.3) #Log2 --> normalization of the data to minimize differences between samples due to small counts.
+
+save(sig15, file = "sig2_deseq2_CAS_TvsC_crubrum.RData")#save as object
+#load(file = "sig2_C-T.RData")
+write.csv(sig15,file="diff_genes_CAS_TvsC_crubrum.csv") #save as cvs file
+
+#extract data which pass an adjusted p value threshold (0.05)
+sig15=subset(re15,re15$padj<0.05)
+sig16=subset(sig15,abs(sig15$log2FoldChange)>0.3) #Log2 --> normalization of the data to minimize differences between samples due to small counts.
+
+save(sig16, file = "sig2_deseq2_CAS_0_T_crubrum.RData")#save as object
+#load(file = "sig2_C-T.RData")
+write.csv(sig16,file="diff_genes_CAS_0_T_crubrum.csv") #save as cvs file
+
+#extract data which pass an adjusted p value threshold (0.05)
+sig16=subset(re16,re16$padj<0.05)
+sig17=subset(sig16,abs(sig16$log2FoldChange)>0.3) #Log2 --> normalization of the data to minimize differences between samples due to small counts.
+
+save(sig17, file = "sig2_deseq2_CAS_1_T_crubrum.RData")#save as object
+#load(file = "sig2_C-T.RData")
+write.csv(sig17,file="diff_genes_CAS_1_T_crubrum.csv") #save as cvs file
+
+#extract data which pass an adjusted p value threshold (0.05)
+sig17=subset(re17,re17$padj<0.05)
+sig18=subset(sig17,abs(sig17$log2FoldChange)>0.3) #Log2 --> normalization of the data to minimize differences between samples due to small counts.
+
+save(sig18, file = "sig2_deseq2_CAS_2_T_crubrum.RData")#save as object
+#load(file = "sig2_C-T.RData")
+write.csv(sig18,file="diff_genes_CAS_2_T_crubrum.csv") #save as cvs file
+
+#extract data which pass an adjusted p value threshold (0.05)
+sig18=subset(re18,re18$padj<0.05)
+sig19=subset(sig18,abs(sig18$log2FoldChange)>0.3) #Log2 --> normalization of the data to minimize differences between samples due to small counts.
+
+save(sig19, file = "sig2_deseq2_int_LOPvsCAS_T_crubrum.RData")#save as object
+#load(file = "sig2_C-T.RData")
+write.csv(sig19,file="diff_genes_int_LOPvsCAS_T_crubrum.csv") #save as cvs file
+
 #visualization 
-#Sneha - I am assuming all the heatmaps and PCA was to check for outliers (and hence should have been done before you ran all the pairwise tests). 
-#Sandra -- hmmm, maybe we need to discuss this as I am not sure :') 
 
 rld <- rlog(dds_LRT, blind = FALSE)
 save(rld, file = "rld_timeseries.RData")
