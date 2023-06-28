@@ -148,6 +148,7 @@ res
 res <- res[res$baseMean > 10, ]
 summary(res) #day_1_vs_0": This represents the comparison between day 1 and day 0, 
 
+#Sneha : This shown difference b/w day1 and day0 in control overall i.e combining both populations (Just a note)
 ###day 1 vs 0 in the control
 res1 <- results(dds_LRT, alpha = 0.05, contrast = day1_control - day0_control, test = "Wald")
 # or equivalently
@@ -188,6 +189,7 @@ res4
 res4 <- res4[res4$baseMean > 10, ]
 summary(res4) 
 
+#Sneha: combining both populaitons (just a note)
 ###Treatment vs Control (for day0):
 res5 <- results(dds_LRT, alpha = 0.05, contrast = day0_treat - day0_control, test = "Wald")
 # or equivalently
@@ -241,6 +243,7 @@ res9 <- res9[res9$baseMean > 10, ]
 summary(res9) #"day2.treatmentTreatment": This represents the interaction term between "day" and "treatment" for day 2, 
 #testing the difference in gene expression between the treatment group and the control group at day 2.
 
+#Sneha: treat vs ctrl in population lop (just a note)
 ### LOP
 res10 <- results(dds_LRT, alpha = 0.05, contrast = LOP_treat - LOP_control, test = "Wald")
 res10
