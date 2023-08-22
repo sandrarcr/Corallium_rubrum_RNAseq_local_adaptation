@@ -1,12 +1,9 @@
-#DE_analysis Corallium rubrum RNAseq
+#Exploratory analysis of DESeq2 for Corallium rubrum
 
 #set working directory
-setwd("C:/Users/Sandra/OneDrive - The University of Hong Kong/Doctorado/ICM/Tesis/Chap2/RNA-Seq/DESeq2") #mypc
-setwd("C:/Users/Joaquim Garrabou/OneDrive - Universitat de Barcelona/Doctorado/ICM/Tesis/Chap2/RNA-Seq/DESeq2") #Quim's PC
+setwd("/path/directory/") #mypc
 
-#what you need:
-
-# Packages
+# Load Packages
 library(digest)
 library(XML)
 library(RSQLite)
@@ -45,25 +42,11 @@ cts=round(cts)
 #change between groups would increase as the variable increases, 
 #which may not be biologically meaningful.
 
-#To fix this, you can convert these variables to factors using the factor() 
-#function:
-
-coldata$day <- factor(coldata$day)
-coldata$population <- factor(coldata$population)
-coldata$Individual <- factor(coldata$Individual)
-
-dds <- DESeqDataSetFromMatrix(countData = cts, colData = coldata, design = ~treatment)#differences btw Cont vs Treat
+dds <- DESeqDataSetFromMatrix(countData = cts, colData = coldata, design = ~treatment)# differences btw Cont vs Treat since we expect this
 
 # Remove genes which have zero reads in all samples
 keep <- rowSums(counts(dds)) >= 10 #suggested in manual
 dds <- dds[keep,]
-
-# in case you want to obtain normalized counts
-dds <- estimateSizeFactors(dds)
-sizeFactors(dds)
-norm_cts_C_vs_treat <- counts(dds, normalized=TRUE)
-norm_cts_log <- log2(norm_cts_C_vs_treat) #log transform normalised counts
-write.csv(norm_cts_log, file="C:/Users/Joaquim Garrabou/OneDrive - The University of Hong Kong/Doctorado/ICM/Tesis/Chap2/RNA-Seq/crubrum_rnaseq/1.dds~treat/log2_normalised_counts_C-T_crubrum_10cts.csv", row.names=T)
 
 #Set factor levels for comparison
 #dds$treatment <- factor(dds$treatment, levels = c("Control", "Treatment"))
@@ -73,7 +56,7 @@ dds$treatment <- relevel(dds$treatment, ref = "Control")
 dds <- DESeq(dds)#,parallel
 dds
 
-save(dds, file = "C:/Users/Joaquim Garrabou/OneDrive - Universitat de Barcelona/Doctorado/ICM/Tesis/Chap2/RNA-Seq/2. DESeq2/dds.RData")
+save(dds, file = "/path/directory/filename.RData")
 #load(file="C:/Users/Joaquim Garrabou/OneDrive - The University of Hong Kong/Doctorado/ICM/Tesis/Chap2/RNA-Seq/crubrum_rnaseq/1.dds~treat/dds.RData")
 
 #obtain results from dds object
@@ -86,9 +69,9 @@ res #notice the upregulated and downregulated (+ or -, respectively) -
 res <- res[res$baseMean > 10, ]
 summary(res) 
 
-save(res, file = "C:/Users/Joaquim Garrabou/OneDrive - Universitat de Barcelona/Doctorado/ICM/Tesis/Chap2/RNA-Seq/2. DESeq2/res.RData")
-#load(file = "C:/Users/Sandra/Documents/Biologia/Posgrado/PhD/Project/Chapter 2/RNA-seq/crubrum_rnaseq/1.dds~treat/res.RData")
+save(res, file = "/path/directory/filename.RData")
 
+#plot dispersion -- The dispersion plot below is typical, with the final estimates shrunk from the gene-wise estimates towards the fitted estimates.
 plotDispEsts(dds)
 
 #order res based on ajusted smallest p-values
@@ -100,6 +83,7 @@ plotMA(res, ylim=c(-8,8)) #shows the log2 fold changes attributable to a given v
 #counts for all the samples in the DESeqDataSet. Points will be colored red if the adjusted p value is less 
 #than 0.1. Points which fall out of the window are plotted as open triangles pointing either up or down.
 
+### plot counts to see expression differences btw control vs treatment
 plotCounts(dds, gene = which.min(res$padj), intgroup = "treatment")
 
 mcols(res)$description #Information about which variables and tests were used 
@@ -115,23 +99,20 @@ mcols(res)$description #Information about which variables and tests were used
 #extract data from res object
 re <- data.frame(resOrdered)
 re <- na.omit(re)
-write.csv(re,file="C:/Users/Joaquim Garrabou/OneDrive - Universitat de Barcelona/Doctorado/ICM/Tesis/Chap2/RNA-Seq/2. DESeq2/deseq2_C-T_crubrum.csv") #This is the result of the analysis. Name it well.
+write.csv(re,file= "/path/directory/filename.csv") #This is the result of the analysis. Name it well.
 
 #extract data which pass an adjusted p value threshold (0.05)
 sig=subset(re,re$padj<0.05)
-sig2=subset(sig,abs(sig$log2FoldChange)>0.3) #Log2 --> normalization of the data to minimize differences between samples due to small counts.
+sig2=subset(sig,abs(sig$log2FoldChange)>0.3) #Log2 --> filter the minimum value of log2fold change to minimize differences between samples due to small counts. Recommended is always 0.3
 
-save(sig2, file = "C:/Users/Joaquim Garrabou/OneDrive - Universitat de Barcelona/Doctorado/ICM/Tesis/Chap2/RNA-Seq/2. DESeq2/sig2_deseq2_C-T_crubrum.RData")#save as object
-#load(file = "sig2_C-T.RData")
-write.csv(sig2,file="C:/Users/Joaquim Garrabou/OneDrive - Universitat de Barcelona/Doctorado/ICM/Tesis/Chap2/RNA-Seq/2. DESeq2/diff_genes_C-T_crubrum.csv") #save as cvs file
-
+save(sig2, file = "/path/directory/filename.RData.RData") #save as object
+write.csv(sig2, file="/path/directory/filename.RData.csv") #save as cvs file
 
 ############# Data transformation and visualization ############################
-# for visualization or clustering – it might be useful to work with 
-#transformed versions of the count data.
-#The most useful is the log as you have zeros and non-zeros in others - big diff
+# for visualization or clustering – it might be useful to work with transformed versions of the count data.
+#The most useful is the log transformation as you have zeros and non-zeros in others - big diff
 
-#VST and rlog - remove the dependence of the variance on the mean, 
+#VST and rlog transformations remove the dependence of the variance on the mean, 
 #particularly the high variance of the logarithm of #count data when the mean 
 #is low. Both VST and rlog use the experiment-wide trend of variance over mean, 
 #in order to transform the data to remove the experiment-wide trend
@@ -159,17 +140,15 @@ write.csv(sig2,file="C:/Users/Joaquim Garrabou/OneDrive - Universitat de Barcelo
 #variability is independent of the mean expression level, while rlog does
 #not make this assumption. If you have reason to believe that the biological variability is dependent on the mean expression level, rlog may be a better choice.
 
-#Consider the downstream analysis: Some downstream analyses, such as gene set 
+#Consider the downstream analysis, such as gene set 
 #enrichment analysis, may have different requirements for input data. 
 #It is important to check the requirements of your downstream analysis 
 #to ensure that your choice of transformation is appropriate.
 
 #So, we choose rlog
 
-#rld <- vst(dds,blind = FALSE) #faster transformation
 rld <- rlog(dds, blind = FALSE)
-save(rld, file = "C:/Users/Joaquim Garrabou/OneDrive - Universitat de Barcelona/Doctorado/ICM/Tesis/Chap2/RNA-Seq/2. DESeq2/rld.RData")
-#load(file = "C:/Users/Sandra/Documents/Biologia/Posgrado/PhD/Project/Chapter 2/RNA-seq/crubrum_rnaseq/1.dds~treat/rld.RData")
+save(rld, file = "/path/directory/filename.RData")
 
 ######################## Heatmap C-T ###########################
 
@@ -208,11 +187,10 @@ dev.off()
 
 head(assay(rld))
 plotPCA(rld, intgroup="treatment")
-plotPCA(rld, intgroup=c("population"))
-plotPCA(rld, intgroup=c("treatment","population"))
 
 pcaExplorer(dds = dds, dst = rld)
 
 plotPCA(rld, intgroup = "treatment",
         ntop = 500, returnData = FALSE)
 
+#notice the patterns in the data. Is the differential expression driven by the treatment as expected? What other patterns are observed?
