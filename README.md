@@ -6,4 +6,5 @@ Repository for Corallium rubrum differential gene expression analysis under a te
 This experiment includes the following design:
 
 Population 1: CAS (N=3)x 3T (days 5, 10 and 15) = 9 replicates
+
 Population 2: LOP (N=3)x 3T (days 5, 10 and 15) = 9 replicates
