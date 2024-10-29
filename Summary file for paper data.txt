@@ -1,0 +1,75 @@
+### Summary file for data associated with paper Recurrent extreme climatic events are driving gorgonian populations to local extinction: low adaptive potential to marine heatwaves ####
+
+# The following scripts and data files are available at the GitHub and Zenodo repository with DOI:https://doi.org/10.5281/zenodo.13959704. Information on how these scripts and associated dataset should be run is inside each file. 
+
+### Scripts ###
+
+1_average_tissue_necrosis_year_pop.R:
+
+    Purpose: Calculates average tissue necrosis across different years and populations.
+    Key Variables: Tissue necrosis levels (percentage of severity), Year, Population.
+    Units: Percentage of necrosis severity levels, considered in intervals of 5%.
+    Relationship: Provides necrosis data correlated with environmental or genetic data in the following scripts.
+
+2_PCAs_GLM.R:
+
+    Purpose: PCA and GLM to explore factors related to tissue necrosis.
+    Key Variables: Colony_ID (individual), Population, Necrosis per year, Conditions (control & treatment), Temperature, Experimental Day.
+    Units: Necrosis (% severity levels), PCA scores.
+    Relationship: Examines variation in necrosis as influenced by environmental or genetic factors from the population data.
+
+3_microsat_analysis.R:
+
+    Purpose: Analyzes microsatellite genetic markers for population structure and diversity.
+    Key Variables: Genetic markers (allele counts, frequencies), Population ID.
+    Units: Allele frequencies, diversity indices.
+    Relationship: Provides genetic background data to assess if genetic diversity impacts necrosis levels or resilience across populations.
+
+4_heterosis_MLH.R
+
+	Purpose: Heterosis obtained from microsatellite and necrosis data (genotype & trait) to estimate fitness.
+	Key Variables: Genetic markers (allele counts, frequencies), Population ID, Average necrosis percentages
+	Units: Allele frequencies, Necrosis percentages 
+	Relationships: Examines the relationship between the genetic data and the biological traits to determine fitness in the population
+
+4_heterosis_regression.R
+	
+	Purpose: To detect heterosis patterns according to the necrosis data in each population
+	Units: MLH heterosis and Necrosis %
+	Relationship: Provides heterosis tendencies (i.e. loss of fitness) in the temporal scale used (2015-2017)
+
+5_genotype-by-environment_analysis.R
+
+	Purpose: Estimate genotype-by-environment sensitivities of P. clavata individuals
+	Units: PCA scores and MLH heterosis values
+	Relationship: Examines the effect of genotypes (MLH) and PCA scores (intercepts) as the phenotypic responses of individuals 
+
+6_null_model.R
+
+	Purpose: To evaluate regression lines significance from 5_genotype-by-environment_analysis.R, and whether the slopes deviate from a null model
+	Units: PCscores, and Mean PCA scores
+	Relationship: Test for significance in slopes patterns to evaluate if it is due to our studied factors (Genotype-by-environment) or just the result of random chance
+
+### Datasets ###
+
+-Avnec_het.csv 
+	Average necrosis for heterosis calculation: Ind	(Individual IDs) Nec_2015 Nec_2016 Nec_2017 (Necrosis values in %)
+	
+-Intercepts_ind.csv: Individual intercepts LM data Individual (Individual IDs)	intercepts (proxy for individual fitness PCA)
+	
+-P.clavata_microsat.csv: Microsatellite data and genotypes for individuals of P. clavata. 
+	First row indicates number of microsatellites used, number of individuals, number of populations, individuals for Pota del Llop, Tascons and La Vaca. 
+	Second row contains populations ID codes (MPL, MTA and MVA) for Pota del Llop, Tascons and La Vaca.
+	Third row contains Ind (Individual IDs), Pop (populatio) and Microsatellites codes
+	The rest of the data set contains the alleles information
+	
+-Pcla_interc_het.csv: Data used for Intercepts vs heterosis analysis with Intercepts (proxy for individual fitness PCA) MLH (Multilocus Heterozygosities)
+	
+-Raw_data_nec_pclavata.csv and data_pclavata.csv: : Dataset containing the raw necrosis data in percentages during the 28th days of the experiment. First row contains Colony_ID (Individuals IDs) Year and Condition (control or treatment), followed by each day. Both datasets contain the same information but are transposed for simplicity in running the scripts.
+	
+-data_av_nec_population-name_2015-2017.csv: Dataset with average tissue necrosis per population. First column contains Day (experimental day), year (2015, 2016 or 2017) and associated Error
+	
+-data_sensitivity_analysis.csv: dataset for sensitivity analysis. First row contains the PCScores,	Ind (Individual IDs), Pop, Year, Mean PCAScores (per year) Condition
+	
+-necrosis_cor.csv: dataset with necrosis raw data for individuals with complete information on necrosis estimations every year. This dataset is used as a cleaned version of Raw_data_nec_pclavata.csv and data_pclavata.csv in the scripts.
+
