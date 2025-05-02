@@ -1,0 +1,7 @@
+sample,treatment,day,population,factor
+CAS1_C0,Control,0,CAS,ctrl_day0
+CAS2_C0,Control,0,CAS,ctrl_day0
+CAS3_C0,Control,0,CAS,ctrl_day0
+CAS1_T0,Treatment,0,CAS,treat_day0
+CAS2_T0,Treatment,0,CAS,treat_day0
+CAS3_T0,Treatment,0,CAS,treat_day0
