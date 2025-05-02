@@ -7,6 +7,8 @@
 # Script written by: Sandra Ramirez
 #
 #This script was run to obtain significant differentially expressed genes due to a thermal treatment stress (25C) vs a control (18C) for two contrasting populations of octocoral Corallium rubrum across three different time points (T0, T5 and T10). Data sets used under this script can be found in the associated repository
+#
+#Visualizations of all results were made following DESEq2 vignette.
 #####################################################################
 
 setwd("~")
