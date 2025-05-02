@@ -1,0 +1,7 @@
+sample,treatment,day,population,factor
+LOP1_C0,Control,0,LOP,ctrl_day0
+LOP2_C0,Control,0,LOP,ctrl_day0
+LOP5_C0,Control,0,LOP,ctrl_day0
+LOP1_T0,Treatment,0,LOP,treat_day0
+LOP2_T0,Treatment,0,LOP,treat_day0
+LOP3_T0,Treatment,0,LOP,treat_day0
