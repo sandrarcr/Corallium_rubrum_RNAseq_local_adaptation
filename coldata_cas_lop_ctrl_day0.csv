@@ -1,7 +1,0 @@
-sample,treatment,day,population,factor
-CAS_C0_1,Control,0,CAS,ctrl_day0
-CAS_C0_2,Control,0,CAS,ctrl_day0
-CAS_C0_3,Control,0,CAS,ctrl_day0
-LOP_C0_1,Control,0,LOP,ctrl_day0
-LOP_C0_2,Control,0,LOP,ctrl_day0
-LOP_C0_5,Control,0,LOP,ctrl_day0
