@@ -133,4 +133,4 @@ res_sig_day <- results_day[results_day$padj < 0.05, ]
 ### 40 genes DE due to day effect
 
 
-# 3192 DEGs (pop effect), 1806 DEGs (treatment effect) and 40 DEGs (day effect) prove that population and temperature had a bigger effect in our data. Proceed for Wald tests statistics.
+# 3192 DEGs (pop effect), 1806 DEGs (treatment effect) and 40 DEGs (day effect) prove that population and temperature had a bigger effect in our data. Proceed for Wald tests statistics with script 2. Wald_tests_DESeq2.R.
