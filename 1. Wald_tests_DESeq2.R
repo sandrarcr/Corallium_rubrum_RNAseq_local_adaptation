@@ -6,9 +6,12 @@
 #
 # Script written by: Sandra Ramirez
 #
-#This script was run to obtain significant differentially expressed genes due to a thermal treatment stress (25C) vs a control (18C) for two contrasting populations of octocoral Corallium rubrum across three different time points (T0, T5 and T10). Data sets used under this script can be found in the associated repository
+#This script was run to obtain significant differentially expressed genes due to a thermal treatment stress (25C) vs a control (18C) for two contrasting populations of octocoral Corallium rubrum across three different time points (T0, T5 and T10). Data sets used under this script can be found in the associated repository. This should be run after 1. LRTs_DESeq2.R script.
 #
-#Visualizations of all results were made following DESEq2 vignette.
+#
+#Visualizations of all results were made following DESEq2 vignette and are not included in these scripts.
+#
+#
 #####################################################################
 
 setwd("~")
@@ -29,7 +32,6 @@ library("dplyr")
 library("ggplot2")
 
 ### Q1. Wald test to see the overall effect of temperature, regardless of the population, day, interactions
-# This will show what genes are DE due to overall temp effect and also what is upregulated and what is downregulated
 
 #load data
 data <- read.csv("crubrum.gene.counts.matrix.csv",row.names=1)
@@ -43,7 +45,6 @@ meta$day <- factor(meta$day)
 
 dds <- DESeqDataSetFromMatrix(countData = data, colData = meta, 
                               design = ~population + treatment + day)
-# to do a wald test, you cannot have the term temperature and the interaction together in the design - it gives an error
 
 #check the levels of each factor
 dds$population
@@ -83,7 +84,7 @@ sig_results=subset(sig_results,abs(sig_results$log2FoldChange)>0.3)
 write.csv(sig_results, file="")
 
 #**********************************************************************
-#Q2. What is the overall effect of temperature for each population?? To make it easier, first subset the data and do the analysis separately for each population
+#Q2. What is the overall effect of temperature for each population?? Subset the data and do the analysis separately for each population
 
 #load data
 
@@ -210,7 +211,6 @@ resultsNames(dds)
 
 #pairwise for treat day0 vs ctrl day0
 res_day0 <- results(dds, alpha = 0.05, contrast = c("factor","treat_day0","ctrl_day0"), test ="Wald")
-#So the genes are up/ down regulated in treat day0 vs ctrl day0
 res_day0 <- res_day0[res_day0$baseMean > 10, ]
 summary(res_day0)
 res_day0
@@ -256,7 +256,6 @@ resultsNames(dds)
 
 #pairwise for treat day2 vs ctrl day2
 res_day2 <- results(dds, alpha = 0.05, contrast = c("factor","treat_day2","ctrl_day2"), test ="Wald")
-#So the genes are up/ down regulated in treat day2 vs ctrl day2
 res_day2 <- res_day2[res_day2$baseMean > 10, ]
 summary(res_day2)
 res_day2
@@ -282,7 +281,6 @@ resultsNames(dds)
 res_treat_day1 <- results(dds, alpha = 0.05, contrast = c("factor","treat_day1","treat_day0"), 
                           test ="Wald")
 res_treat_day1 <- res_treat_day1[res_treat_day1$baseMean > 10, ]
-#So the genes are up/ down regulated in treatment day1 vs treatment day0
 
 summary(res_treat_day1)
 res_treat_day1
@@ -298,7 +296,6 @@ write.csv(sig_results_treat_day1,file="")
 #pairwise for day 2 vs 0 (in the Treatment)
 res_treat_day2 <- results(dds, alpha = 0.05, contrast = c("factor","treat_day2","treat_day0"), 
                           test ="Wald")
-#So the genes are up/ down regulated in treatment day2 vs treatment day0
 res_treat_day2 <- res_treat_day2[res_treat_day2$baseMean > 10, ]
 
 summary(res_treat_day2)
@@ -321,7 +318,6 @@ dds <- DESeq(dds)
 resultsNames(dds)
 
 res <- results(dds, alpha = 0.05, contrast = c("factor","treat_day2","treat_day1"), test ="Wald")
-#So the genes are up/ down regulated in treatment day2 vs treatment day1
 res <- res[res$baseMean > 10, ]
 
 summary(res)
@@ -336,7 +332,6 @@ sig_results=subset(sig_results,abs(sig_results$log2FoldChange)>0.3)
 write.csv(sig_results,file="")
 
 #load data for mesophotic
-
 lop_data <- read.csv("LOP_counts.csv",row.names=1)
 lop_meta <- read.csv("LOP_metadata.csv",row.names=1)
 
@@ -372,7 +367,6 @@ resultsNames(dds)
 
 #pairwise for treat day0 vs ctrl day0
 res_day0 <- results(dds, alpha = 0.05, contrast = c("factor","treat_day0","ctrl_day0"), test ="Wald")
-#So the genes are up/ down regulated in treat day0 vs ctrl day0
 res_day0 <- res_day0[res_day0$baseMean > 10, ]
 
 summary(res_day0)
@@ -397,7 +391,6 @@ resultsNames(dds)
 
 #pairwise for treat day1 vs ctrl day1
 res_day1 <- results(dds, alpha = 0.05, contrast = c("factor","treat_day1","ctrl_day1"), test ="Wald")
-#So the genes are up/ down regulated in treat day1 vs ctrl day1
 res_day1 <- res_day1[res_day1$baseMean > 10, ]
 
 summary(res_day1)
@@ -422,7 +415,6 @@ resultsNames(dds)
 
 #pairwise for treat day2 vs ctrl day2
 res_day2 <- results(dds, alpha = 0.05, contrast = c("factor","treat_day2","ctrl_day2"), test ="Wald")
-#So the genes are up/ down regulated in treat day2 vs ctrl day2
 res_day2 <- res_day2[res_day2$baseMean > 10, ]
 
 summary(res_day2)
@@ -446,7 +438,6 @@ resultsNames(dds)
 
 #pairwise for day 1 vs 0 (in the Treatment)
 res_treat_day1 <- results(dds, alpha = 0.05, contrast = c("factor","treat_day1","treat_day0"), test ="Wald")
-#So the genes are up/ down regulated in treatment day1 vs treatment day0
 res_treat_day1 <- res_treat_day1[res_treat_day1$baseMean > 10, ]
 
 summary(res_treat_day1)
@@ -462,7 +453,6 @@ write.csv(sig_results_treat_day1,file="")
 
 #pairwise for day 2 vs 0 (in the Treatment)
 res_treat_day2 <- results(dds, alpha = 0.05, contrast = c("factor","treat_day2","treat_day0"), test ="Wald")
-#So the genes are up/ down regulated in treatment day2 vs treatment day0
 res_treat_day2 <- res_treat_day2[res_treat_day2$baseMean > 10, ]
 
 summary(res_treat_day2)
@@ -478,7 +468,6 @@ write.csv(sig_results_treat_day2,file="")
 
 #pairwise for day 2 vs day1 (in the Treatment)
 
-#first need to change the reference level
 # Explicitly set the factor levels - the reference level
 dds$treatment <- relevel(dds$factor, ref = "treat_day1")
 
@@ -486,7 +475,6 @@ dds <- DESeq(dds)
 resultsNames(dds)
 
 res <- results(dds, alpha = 0.05, contrast = c("factor","treat_day2","treat_day1"), test ="Wald")
-#So the genes are up/ down regulated in treatment day2 vs treatment day1
 res <- res[res$baseMean > 10, ]
 
 summary(res)
@@ -501,8 +489,8 @@ sig_results=subset(sig_results,abs(sig_results$log2FoldChange)>0.3)
 write.csv(sig_results,file="")
 
 #*************************************************************************************
-#* Q4. what is the differnece between the two populations at time 0
-#* only for control to see the baseline difference between the two populations
+#* Q4. what is the difference between the two populations at time 0
+#* only for control samples to see the baseline difference between the two populations when no temperature effect was happening
 
 #load data
 data <- read.csv("counts_cas_lop_ctrl_day0.csv",row.names=1)
@@ -531,7 +519,7 @@ dds$population <- relevel(dds$population, ref = "CAS")
 dds <- DESeq(dds)
 resultsNames(dds)
 
-res <- results(dds, alpha = 0.05, contrast = c("population","CAS","LOP"), test ="Wald") #L2FC> 0 upregulated in CAS
+res <- results(dds, alpha = 0.05, contrast = c("population","CAS","LOP"), test ="Wald")
 res <- res[res$baseMean > 10, ]
 
 summary(res)
@@ -546,7 +534,7 @@ sig_results <- results[results$padj<0.05, ]
 sig_results=subset(sig_results,abs(sig_results$log2FoldChange)>0.3)
 write.csv(sig_results,file="")
 
-########## Q4 Ctrl vs treat per each pop at day T0 #####
+########## Q4 Ctrl vs treat day T0 for each population independently #####
 
 #shallow
 data <- read.csv("counts_cas_ctrl_T_day0.csv",row.names=1)
