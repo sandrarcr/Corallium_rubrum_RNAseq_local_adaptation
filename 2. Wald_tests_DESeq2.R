@@ -256,7 +256,7 @@ resultsNames(dds)
 res_lop <- results(dds, alpha = 0.05, contrast = c("treatment","Treatment","Control"), test ="Wald")
 res_lop <- res_lop[res_lop$baseMean > 10, ]
 summary(res_lop)
-res_lop
+res_lop #this will be use for frontloading - save it.
 
 results_lop <- data.frame(res_lop)
 results_lop <- na.omit(results_lop)
@@ -549,3 +549,4 @@ df$Classification[frontloaded]       <- "frontloaded"
 # Save full table:
 write.csv(df,"write/full/path/and/filename.csv",
           row.names = FALSE) #filter table with upregulated mesophotic DEGs relevant for the study - add annotation and run enrichment.
+
