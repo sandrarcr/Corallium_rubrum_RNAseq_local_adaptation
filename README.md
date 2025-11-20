@@ -30,6 +30,11 @@ This project investigates the transcriptomic responses of the precious coral *Co
 3. **Visualization**:
     - We followed the current DESeq2 manual vignette for plots.
   
+4. **Annotation**:
+    - Functional annotation of transcripts was done using the software Omicsbox v3.1.11 (BioBam Bioinformatics 2019)
+    - Annotated transcripts are included in ArrayExpress under the Accession code E-MTAB-15157 and at ENA under ERP172750
+
+  
 
 
 
