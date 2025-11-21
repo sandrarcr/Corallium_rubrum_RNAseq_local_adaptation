@@ -1,10 +1,11 @@
-
-######################Code accompanying:###################################################
+###################### Code accompanying:###################################################
 #
-#   Ramirez-Calero, S. et al. 2025. Does local adaptation influence thermal responses in 
+#   Ramirez-Calero, S. et al. 2025. Does local adaptation influence thermal responses in
 #   red coral populations across depth gradients? Transcriptomic insights for effective conservation.
 #
 # Script written by: Sandra Ramirez
+#
+# This script must be run within a Rproject containg the data folder and the renv.lock file.
 #
 # This script contains all WALD TESTS used to quantify pairwise contrasts in gene expression.
 #
@@ -20,42 +21,40 @@
 #
 # For this script we use the data sets already available in the repository
 
-setwd("~")
+# If you didn't run LRT*.R script before,
+# then run this to retrieve the project library:
+renv::restore()
 
-#load libraries
+# load libraries
 
 library(digest)
 library(XML)
 library(RSQLite)
 library(DESeq2)
-library("pcaExplorer")
-library("ComplexHeatmap")
-library("gplots")
-library("RColorBrewer")
-library("gplots")
-library("pheatmap")
-library("dplyr")
-library("ggplot2")
+library(gplots)
+library(RColorBrewer)
+library(dplyr)
+library(ggplot2)
 
-##########################Q1#########################################
+########################## Q1#########################################
 # BASELINE DIFFERENCES BETWEEN POPULATIONS (CONTROL, T0) - FRONTLOADING
 #
 # Rationale:
 #   - Before thermal stress, identify constitutive (baseline) differences between
-#     shallow and mesophotic colonies under control conditions. Considered as 
+#     shallow and mesophotic colonies under control conditions. Considered as
 #     frontloaded or pre-emptive expression (under normal temperature conditions)
 #   - These genes may underlie local adaptation and differential stress tolerance.
-#   - Since treatment × population interaction was not significant, we can analyze 
+#   - Since treatment × population interaction was not significant, we can analyze
 #     population differences within a treatment/time subset
 #   - There is a strong treatment main effect and moderate treatment × time effect,
-#     so it justifies comparing baseline expression separately, because time effects 
+#     so it justifies comparing baseline expression separately, because time effects
 #     can be removed by restricting to T0.
 #
-#* Include only  control samples to have an real isolate effect to see the baseline 
+#* Include only  control samples to have an real isolate effect to see the baseline
 #* difference between the two populations
 
-data <- read.csv("counts_cas_lop_ctrl_day0.csv",row.names=1)
-meta <- read.csv("coldata_cas_lop_ctrl_day0.csv",row.names=1)
+data <- read.csv("data/counts_cas_lop_ctrl_day0.csv", row.names = 1)
+meta <- read.csv("data/coldata_cas_lop_ctrl_day0.csv", row.names = 1)
 
 
 data <- round(data)
@@ -64,15 +63,19 @@ data <- round(data)
 
 meta$day <- factor(meta$day)
 
-dds <- DESeqDataSetFromMatrix(countData = data, colData = meta, 
-                              design = ~population)
+dds <- DESeqDataSetFromMatrix(
+  countData = data, colData = meta,
+  design = ~population
+)
 
-#check the levels of each factor
+# check the levels of each factor
 dds$population
 
 # Keep only genes that have non-zero reads in total
+cat("Raw genes", nrow(counts(dds)), "genes before filtering")
 keep <- rowSums(counts(dds)) > 0
-dds <- dds[keep,]
+dds <- dds[keep, ]
+cat("Kept genes", nrow(counts(dds)), "genes after filtering")
 
 # Explicitly set the factor levels
 dds$population <- relevel(dds$population, ref = "CAS")
@@ -80,103 +83,105 @@ dds$population <- relevel(dds$population, ref = "CAS")
 dds <- DESeq(dds)
 resultsNames(dds)
 
-res <- results(dds, alpha = 0.05, contrast = c("population","CAS","LOP"), test ="Wald") #L2FC> 0 upregulated in CAS
+res <- results(dds, alpha = 0.05, contrast = c("population", "CAS", "LOP"), test = "Wald") # L2FC > 0 upregulated in CAS
 res <- res[res$baseMean > 10, ]
 
 summary(res)
-res
 
 results <- data.frame(res)
 results <- na.omit(results)
-write.csv(results,file="") #total results
+write.csv(results, file = "") # total results
 
-sig_results <- results[results$padj<0.05, ]
-sig_results=subset(sig_results,abs(sig_results$log2FoldChange)>0.3)
-write.csv(sig_results,file="")
+sig_results <- results[results$padj < 0.05, ]
+sig_results <- subset(sig_results, abs(sig_results$log2FoldChange) > 0.3)
+write.csv(sig_results, file = "")
 nrow(sig_results)
-#189
+# 189
 
-###############################Q2####################################
+############################### Q2####################################
 # GLOBAL TEMPERATURE EFFECT (all populations and days together)
 #
 # Rationale:
 #   - The LRT showed a strong effect due to treatment
 #   - Due to the limited sample size, we use the Wald test to identify which genes are up/down-regulated
-#     due to temperature (all control samples vs all treatment samples) using a simpler additive model (), 
+#     due to temperature (all control samples vs all treatment samples) using a simpler additive model(),
 #   - This ignores small interaction effects for simplicity, as justified by the LRT.
 
-#load data
-data <- read.csv("crubrum.gene.counts.matrix.csv",row.names=1)
-meta <- read.csv("crubrum.coldata.csv",row.names=1)
+# load data
+data1 <- read.csv("data/crubrum.gene.counts.matrix.csv", row.names = 1)
+meta1 <- read.csv("data/crubrum.coldata.csv", row.names = 1)
 
-data <- round(data)
-(all(rownames(meta) %in% colnames(data)) || all(colnames(data) %in% rownames(meta)))
-(all(colnames(data) == rownames(meta)))
+data1 <- round(data1)
+(all(rownames(meta1) %in% colnames(data1)) || all(colnames(data1) %in% rownames(meta1)))
+(all(colnames(data1) == rownames(meta1)))
 
-meta$day <- factor(meta$day)
+meta1$day <- factor(meta1$day)
 
 # Design: population + treatment + day (no interactions)
-dds <- DESeqDataSetFromMatrix(countData = data, colData = meta, 
-                              design = ~population + treatment + day)
+dds1 <- DESeqDataSetFromMatrix(
+  countData = data1, colData = meta1,
+  design = ~ population + treatment + day
+)
 
-#check the levels of each factor
-dds$population
-dds$treatment
-dds$day
+# check the levels of each factor
+dds1$population
+dds1$treatment
+dds1$day
 
 # Keep only genes that have non-zero reads in total
-keep <- rowSums(counts(dds)>= 10) >= 3
-dds <- dds[keep,]
+cat("Raw genes", nrow(counts(dds1)), "genes before filtering")
+keep1 <- rowSums(counts(dds1) >= 10) >= 3
+dds1 <- dds1[keep1, ]
+cat("Raw genes", nrow(counts(dds1)), "genes after filtering")
 
-#obtain normalized counts
-dds_norm <- estimateSizeFactors(dds)
+# obtain normalized counts
+dds_norm <- estimateSizeFactors(dds1)
 sizeFactors(dds_norm)
-norm_cts_C_vs_T <- counts(dds_norm, normalized=TRUE)
-norm_cts_log <- log2(norm_cts_C_vs_T) #log transform normalised counts
-write.csv(norm_cts_log, file="", row.names=T)
+norm_cts_C_vs_T <- counts(dds_norm, normalized = TRUE)
+norm_cts_log <- log2(norm_cts_C_vs_T) # log transform normalised counts
+write.csv(norm_cts_log, file = "", row.names = T)
 
 # Explicitly set the factor levels (control - reference)
-dds$treatment <- relevel(dds$treatment, ref = "Control")
+dds1$treatment <- relevel(dds1$treatment, ref = "Control")
 
-dds <- DESeq(dds) #run DEseq2
-resultsNames(dds)
+dds1 <- DESeq(dds1) # run DEseq2
+resultsNames(dds1)
 
-res <- results(dds, alpha = 0.05, contrast = c("treatment","Treatment","Control"), test ="Wald")
-res <- res[res$baseMean > 10, ]
+res1 <- results(dds1, alpha = 0.05, contrast = c("treatment", "Treatment", "Control"), test = "Wald")
+res1 <- res1[res1$baseMean > 10, ]
 
-summary(res)
-res
+summary(res1)
 
-results <- data.frame(res)
-results <- na.omit(results)
-write.csv(results,file="") #total results
+results1 <- data.frame(res1)
+results1 <- na.omit(results1)
+write.csv(results1, file = "") # total results
 
-#filter results
-sig_results <- results[results$padj<0.05, ]
-sig_results=subset(sig_results,abs(sig_results$log2FoldChange)>0.3)
-write.csv(sig_results, file="")
-nrow(sig_results)
-#1801
+# filter results
+sig_results1 <- results1[results1$padj < 0.05, ]
+sig_results1 <- subset(sig_results1, abs(sig_results1$log2FoldChange) > 0.3)
+write.csv(sig_results1, file = "")
+nrow(sig_results1)
+# 1801
 
-################################Q3#######################################
+################################ Q3#######################################
 # TEMPERATURE EFFECT WITHIN EACH POPULATION
 #
 # Rationale:
 #   - The unified LRT confirmed a strong main effect of treatment and a negligible
-#     treatment × population interaction, indicating that both populations were 
+#     treatment × population interaction, indicating that both populations were
 #     overall affected by temperature stress,
 #   - We now analyze each population separately to see how each responds to heat.
-#   - By applying a additive design (~ treatment + day) within each population,
-#     we estimate the average treatment response while accounting for temporal 
+#   - By applying an additive design (~ treatment + day) within each population,
+#     we estimate the average treatment response while accounting for temporal
 #     variation, without overparameterizing the model due to small sampling size
 #   - This allows us to assess local adaptation: whether shallow vs mesophotic colonies
-#     activate different and specific ranscriptional pathways under the same stress.
+#     activate different and specific transcriptional pathways under the same stress.
 
-#load data
+# load data
 
 ### shallow ####
-cas_data <- read.csv("CAS_counts.csv",row.names=1)
-cas_meta <- read.csv("CAS_metadata.csv",row.names=1)
+cas_data <- read.csv("data/CAS_counts.csv", row.names = 1)
+cas_meta <- read.csv("data/CAS_metadata.csv", row.names = 1)
 
 cas_data <- round(cas_data)
 
@@ -185,47 +190,49 @@ cas_data <- round(cas_data)
 
 cas_meta$day <- factor(cas_meta$day)
 
-dds <- DESeqDataSetFromMatrix(countData = cas_data, colData = cas_meta, 
-                              design = ~ treatment + day)
+dds2 <- DESeqDataSetFromMatrix(
+  countData = cas_data, colData = cas_meta,
+  design = ~ treatment + day
+)
 
-#check the levels for each factor
-dds$treatment
-dds$day
+# check the levels for each factor
+dds2$treatment
+dds2$day
 
-# Keep only genes that have non-zero reads in total
-keep <- rowSums(counts(dds) >= 10) >= 3
-dds <- dds[keep,]
+# Keep only genes that have at least 10 reads in at least 3 samples
+keep2 <- rowSums(counts(dds2) >= 10) >= 3
+dds2 <- dds2[keep2, ]
 
-#obtain normalization counts if desired
+# obtain normalization counts if desired (see Q2)
 
 # Explicitly set the factor levels - set control as baseline again
-dds$treatment <- relevel(dds$treatment, ref = "Control")
+dds2$treatment <- relevel(dds2$treatment, ref = "Control")
 
-dds <- DESeq(dds)
-resultsNames(dds)
+dds2 <- DESeq(dds2)
+resultsNames(dds2)
 
-res_cas <- results(dds, alpha = 0.05, contrast = c("treatment","Treatment","Control"), test ="Wald")
+res_cas <- results(dds2, alpha = 0.05, contrast = c("treatment", "Treatment", "Control"), test = "Wald")
 res_cas <- res_cas[res_cas$baseMean > 10, ]
 
 summary(res_cas)
-res_cas
+res_cas # This will be used for frontloading - keep it.
 
 results_cas <- data.frame(res_cas)
 results_cas <- na.omit(results_cas)
-write.csv(results_cas,file="") #total results
+write.csv(results_cas, file = "") # total results
 
 
-sig_results_cas <- results_cas[results_cas$padj<0.05, ]
-sig_results_cas=subset(sig_results_cas,abs(sig_results_cas$log2FoldChange)>0.3)
-write.csv(sig_results_cas,file="",row.names=T)
+sig_results_cas <- results_cas[results_cas$padj < 0.05, ]
+sig_results_cas <- subset(sig_results_cas, abs(sig_results_cas$log2FoldChange) > 0.3)
+write.csv(sig_results_cas, file = "", row.names = T)
 nrow(sig_results_cas)
-#468
+# 468
 
-###mesophotic ####
+### mesophotic ####
 
-#load data
-lop_data <- read.csv("LOP_counts.csv",row.names=1)
-lop_meta <- read.csv("LOP_metadata.csv",row.names=1)
+# load data
+lop_data <- read.csv("data/LOP_counts.csv", row.names = 1)
+lop_meta <- read.csv("data/LOP_metadata.csv", row.names = 1)
 
 lop_data <- round(lop_data)
 
@@ -234,41 +241,43 @@ lop_data <- round(lop_data)
 
 lop_meta$day <- factor(lop_meta$day)
 
-dds <- DESeqDataSetFromMatrix(countData = lop_data, colData = lop_meta, 
-                              design = ~ treatment + day)
+dds3 <- DESeqDataSetFromMatrix(
+  countData = lop_data, colData = lop_meta,
+  design = ~ treatment + day
+)
 
-#check the levels for each factor
-dds$treatment
-dds$day
+# check the levels for each factor
+dds3$treatment
+dds3$day
 
 # Keep only genes that have non-zero reads in total
-keep <- rowSums(counts(dds) >= 10) >= 3
-dds <- dds[keep,]
+keep3 <- rowSums(counts(dds3) >= 10) >= 3
+dds3 <- dds3[keep3, ]
 
-#obtain normalized counts if desired
+# obtain normalized counts if desired
 
 # Explicitly set the factor levels
-dds$treatment <- relevel(dds$treatment, ref = "Control")
+dds3$treatment <- relevel(dds3$treatment, ref = "Control")
 
-dds <- DESeq(dds)
-resultsNames(dds)
+dds3 <- DESeq(dds3)
+resultsNames(dds3)
 
-res_lop <- results(dds, alpha = 0.05, contrast = c("treatment","Treatment","Control"), test ="Wald")
+res_lop <- results(dds3, alpha = 0.05, contrast = c("treatment", "Treatment", "Control"), test = "Wald")
 res_lop <- res_lop[res_lop$baseMean > 10, ]
 summary(res_lop)
-res_lop #this will be use for frontloading - save it.
+res_lop # this will be use for frontloading - keep it.
 
 results_lop <- data.frame(res_lop)
 results_lop <- na.omit(results_lop)
-write.csv(results_lop,file="") #total results
+write.csv(results_lop, file = "") # total results
 
-sig_results_lop <- results_lop[results_lop$padj<0.05, ]
-sig_results_lop=subset(sig_results_lop,abs(sig_results_lop$log2FoldChange)>0.3)
-write.csv(sig_results_lop,file="",row.names=T)
+sig_results_lop <- results_lop[results_lop$padj < 0.05, ]
+sig_results_lop <- subset(sig_results_lop, abs(sig_results_lop$log2FoldChange) > 0.3)
+write.csv(sig_results_lop, file = "", row.names = T)
 nrow(sig_results_lop)
-#1008
+# 1008
 
-################################Q4#######################################
+################################ Q4 #######################################
 # TIME EFFECTS OF TEMPERATURE PER POPULATION
 #
 # Rationale:
@@ -277,46 +286,48 @@ nrow(sig_results_lop)
 #   - This approach identifies genes whose expression changes due to heat stress at early (T0), intermediate (T5),  and late time points (T10),
 
 ## load data
-data <- read.csv("crubrum.gene.counts.matrix.csv",row.names=1)
-meta <- read.csv("crubrum.coldata.csv",row.names=1)
+data4 <- read.csv("data/crubrum.gene.counts.matrix.csv", row.names = 1)
+meta4 <- read.csv("data/crubrum.coldata.csv", row.names = 1)
 
-data <- round(data)
+data4 <- round(data4)
 
-(all(rownames(meta) %in% colnames(data)) || all(colnames(data) %in% rownames(meta)))
-(all(colnames(data) == rownames(meta)))
+(all(rownames(meta4) %in% colnames(data4)) || all(colnames(data4) %in% rownames(meta4)))
+(all(colnames(data4) == rownames(meta4)))
 
-#defined factors
-meta$treatment  <- factor(meta$treatment, levels = c("Control","Treatment"))
-meta$population <- factor(meta$population, levels = c("CAS","LOP"))
-meta$day        <- factor(meta$day, levels = c("0","1","2"), labels = c("T0","T5","T10"))
+# defined factors
+meta4$treatment <- factor(meta4$treatment, levels = c("Control", "Treatment"))
+meta4$population <- factor(meta4$population, levels = c("CAS", "LOP"))
+meta4$day <- factor(meta4$day, levels = c("0", "1", "2"), labels = c("T0", "T5", "T10"))
 
 # Create a single factor that encodes - dummy variable for population_treatment_day
-meta$factor <- factor(paste0(meta$population, "_", meta$treatment, "_", meta$day))
+meta4$factor <- factor(paste0(meta4$population, "_", meta4$treatment, "_", meta4$day))
 
 # Keep only genes that have non-zero reads in total
-keep_genes <- rowSums(data >= 10) >= 3
-data <- data[keep_genes, ]
+keep_genes4 <- rowSums(data4 >= 10) >= 3
+data4 <- data4[keep_genes4, ]
 
-dds <- DESeqDataSetFromMatrix(countData = data, colData = meta, 
-                              design = ~ factor)
+dds4 <- DESeqDataSetFromMatrix(
+  countData = data4, colData = meta4,
+  design = ~factor
+)
 
-#obtain normalized counts if desired
+# obtain normalized counts if desired
 
-#check the levels for each factor
-dds$factor
+# check the levels for each factor
+dds4$factor
 
 # Set one reference
-dds$factor <- relevel(dds$factor, ref = "CAS_Control_T0")
+dds4$factor <- relevel(dds4$factor, ref = "CAS_Control_T0")
 
 # Run DESeq
-dds <- DESeq(dds)
-resultsNames(dds)
+dds4 <- DESeq(dds4)
+resultsNames(dds4)
 
 #### shallow ####
-#contrasts:
+# contrasts:
 #### T0 (treatment T0 vs Control T0) for Shallow population
-res_CAS_day0 <- results(dds, alpha = 0.05, contrast = c("factor", "CAS_Treatment_T0", "CAS_Control_T0")) #So the genes are up/ down regulated in treat day0 vs ctrl day0
-res_CAS_day0 <- res_CAS_day0[ res_CAS_day0$baseMean > 10, ]
+res_CAS_day0 <- results(dds4, alpha = 0.05, contrast = c("factor", "CAS_Treatment_T0", "CAS_Control_T0")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
+res_CAS_day0 <- res_CAS_day0[res_CAS_day0$baseMean > 10, ]
 summary(res_CAS_day0)
 res_CAS_day0
 
@@ -324,15 +335,15 @@ res_CAS_day0 <- data.frame(res_CAS_day0)
 res_CAS_day0 <- na.omit(res_CAS_day0)
 write.csv(res_CAS_day0, file = "")
 
-sig_results_day0_CAS <- res_CAS_day0[res_CAS_day0$padj<0.05, ]
-sig_results_day0_CAS=subset(sig_results_day0_CAS,abs(sig_results_day0_CAS$log2FoldChange)>0.3)
-write.csv(sig_results_day0_CAS,file="",row.names=T)
-nrow(sig_results_day0_CAS) 
-#18
+sig_results_day0_CAS <- res_CAS_day0[res_CAS_day0$padj < 0.05, ]
+sig_results_day0_CAS <- subset(sig_results_day0_CAS, abs(sig_results_day0_CAS$log2FoldChange) > 0.3)
+write.csv(sig_results_day0_CAS, file = "", row.names = T)
+nrow(sig_results_day0_CAS)
+# 18
 
 ### T5 (treatment T5 vs Control T5) for shallow population
-res_CAS_day5 <- results(dds, alpha = 0.05, contrast = c("factor", "CAS_Treatment_T5", "CAS_Control_T5")) #So the genes are up/ down regulated in treat day0 vs ctrl day0
-res_CAS_day5 <- res_CAS_day5[ res_CAS_day5$baseMean > 10, ]
+res_CAS_day5 <- results(dds4, alpha = 0.05, contrast = c("factor", "CAS_Treatment_T5", "CAS_Control_T5")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
+res_CAS_day5 <- res_CAS_day5[res_CAS_day5$baseMean > 10, ]
 summary(res_CAS_day5)
 res_CAS_day5
 
@@ -340,15 +351,15 @@ res_CAS_day5 <- data.frame(res_CAS_day5)
 res_CAS_day5 <- na.omit(res_CAS_day5)
 write.csv(res_CAS_day5, file = "")
 
-sig_results_day5_CAS <- res_CAS_day5[res_CAS_day5$padj<0.05, ]
-sig_results_day5_CAS=subset(sig_results_day5_CAS,abs(sig_results_day5_CAS$log2FoldChange)>0.3)
-write.csv(sig_results_day5_CAS,file="",row.names=T)
-nrow(sig_results_day5_CAS) 
-#457
+sig_results_day5_CAS <- res_CAS_day5[res_CAS_day5$padj < 0.05, ]
+sig_results_day5_CAS <- subset(sig_results_day5_CAS, abs(sig_results_day5_CAS$log2FoldChange) > 0.3)
+write.csv(sig_results_day5_CAS, file = "", row.names = T)
+nrow(sig_results_day5_CAS)
+# 457
 
 ### T10 (treatment T10 vs Control T10)
-res_CAS_day10 <- results(dds, alpha = 0.05, contrast = c("factor", "CAS_Treatment_T10", "CAS_Control_T10")) #So the genes are up/ down regulated in treat day0 vs ctrl day0
-res_CAS_day10 <- res_CAS_day10[ res_CAS_day10$baseMean > 10, ]
+res_CAS_day10 <- results(dds4, alpha = 0.05, contrast = c("factor", "CAS_Treatment_T10", "CAS_Control_T10")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
+res_CAS_day10 <- res_CAS_day10[res_CAS_day10$baseMean > 10, ]
 summary(res_CAS_day10)
 res_CAS_day10
 
@@ -356,18 +367,18 @@ res_CAS_day10 <- data.frame(res_CAS_day10)
 res_CAS_day10 <- na.omit(res_CAS_day10)
 write.csv(res_CAS_day10, file = "")
 
-sig_results_day10_CAS <- res_CAS_day10[res_CAS_day10$padj<0.05, ]
-sig_results_day10_CAS=subset(sig_results_day10_CAS,abs(sig_results_day10_CAS$log2FoldChange)>0.3)
-write.csv(sig_results_day10_CAS,file="",row.names=T)
-nrow(sig_results_day10_CAS) 
-#490
+sig_results_day10_CAS <- res_CAS_day10[res_CAS_day10$padj < 0.05, ]
+sig_results_day10_CAS <- subset(sig_results_day10_CAS, abs(sig_results_day10_CAS$log2FoldChange) > 0.3)
+write.csv(sig_results_day10_CAS, file = "", row.names = T)
+nrow(sig_results_day10_CAS)
+# 490
 
 #### mesophotic ####
 
 #### T0 (treatment T0 vs Control T0)
 
-res_LOP_day0 <- results(dds, alpha = 0.05, contrast = c("factor", "LOP_Treatment_T0", "LOP_Control_T0")) #So the genes are up/ down regulated in treat day0 vs ctrl day0
-res_LOP_day0 <- res_LOP_day0[ res_LOP_day0$baseMean > 10, ]
+res_LOP_day0 <- results(dds4, alpha = 0.05, contrast = c("factor", "LOP_Treatment_T0", "LOP_Control_T0")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
+res_LOP_day0 <- res_LOP_day0[res_LOP_day0$baseMean > 10, ]
 summary(res_LOP_day0)
 res_LOP_day0
 
@@ -375,15 +386,15 @@ res_LOP_day0 <- data.frame(res_LOP_day0)
 res_LOP_day0 <- na.omit(res_LOP_day0)
 write.csv(res_LOP_day0, file = "")
 
-sig_results_day0_LOP <- res_LOP_day0[res_LOP_day0$padj<0.05, ]
-sig_results_day0_LOP=subset(sig_results_day0_LOP,abs(sig_results_day0_LOP$log2FoldChange)>0.3)
-write.csv(sig_results_day0_LOP,file="",row.names=T)
-nrow(sig_results_day0_LOP) 
-#13
+sig_results_day0_LOP <- res_LOP_day0[res_LOP_day0$padj < 0.05, ]
+sig_results_day0_LOP <- subset(sig_results_day0_LOP, abs(sig_results_day0_LOP$log2FoldChange) > 0.3)
+write.csv(sig_results_day0_LOP, file = "", row.names = T)
+nrow(sig_results_day0_LOP)
+# 13
 
 ### T5 (treatment T5 vs Control T5)
-res_LOP_day5 <- results(dds, alpha = 0.05, contrast = c("factor", "LOP_Treatment_T5", "LOP_Control_T5")) #So the genes are up/ down regulated in treat day0 vs ctrl day0
-res_LOP_day5 <- res_LOP_day5[ res_LOP_day5$baseMean > 10, ]
+res_LOP_day5 <- results(dds4, alpha = 0.05, contrast = c("factor", "LOP_Treatment_T5", "LOP_Control_T5")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
+res_LOP_day5 <- res_LOP_day5[res_LOP_day5$baseMean > 10, ]
 summary(res_LOP_day5)
 res_LOP_day5
 
@@ -391,15 +402,15 @@ res_LOP_day5 <- data.frame(res_LOP_day5)
 res_LOP_day5 <- na.omit(res_LOP_day5)
 write.csv(res_LOP_day5, file = "")
 
-sig_results_day5_LOP <- res_LOP_day5[res_LOP_day5$padj<0.05, ]
-sig_results_day5_LOP=subset(sig_results_day5_LOP,abs(sig_results_day5_LOP$log2FoldChange)>0.3)
-write.csv(sig_results_day5_LOP,file="",row.names=T)
-nrow(sig_results_day5_LOP) 
-#1730
+sig_results_day5_LOP <- res_LOP_day5[res_LOP_day5$padj < 0.05, ]
+sig_results_day5_LOP <- subset(sig_results_day5_LOP, abs(sig_results_day5_LOP$log2FoldChange) > 0.3)
+write.csv(sig_results_day5_LOP, file = "", row.names = T)
+nrow(sig_results_day5_LOP)
+# 1730
 
 ### T10 (treatment T10 vs control T10)
-res_LOP_day10 <- results(dds, alpha = 0.05, contrast = c("factor", "LOP_Treatment_T10", "LOP_Control_T10")) #So the genes are up/ down regulated in treat day0 vs ctrl day0
-res_LOP_day10 <- res_LOP_day10[ res_LOP_day10$baseMean > 10, ]
+res_LOP_day10 <- results(dds4, alpha = 0.05, contrast = c("factor", "LOP_Treatment_T10", "LOP_Control_T10")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
+res_LOP_day10 <- res_LOP_day10[res_LOP_day10$baseMean > 10, ]
 summary(res_LOP_day10)
 res_LOP_day10
 
@@ -407,11 +418,11 @@ res_LOP_day10 <- data.frame(res_LOP_day10)
 res_LOP_day10 <- na.omit(res_LOP_day10)
 write.csv(res_LOP_day10, file = "")
 
-sig_results_day10_LOP <- res_LOP_day10[res_LOP_day10$padj<0.05, ]
-sig_results_day10_LOP=subset(sig_results_day10_LOP,abs(sig_results_day10_LOP$log2FoldChange)>0.3)
-write.csv(sig_results_day10_LOP,file="",row.names=T)
-nrow(sig_results_day10_LOP) 
-#562
+sig_results_day10_LOP <- res_LOP_day10[res_LOP_day10$padj < 0.05, ]
+sig_results_day10_LOP <- subset(sig_results_day10_LOP, abs(sig_results_day10_LOP$log2FoldChange) > 0.3)
+write.csv(sig_results_day10_LOP, file = "", row.names = T)
+nrow(sig_results_day10_LOP)
+# 562
 
 ########################## frontloading #########################################
 # FRONTLOADING
@@ -443,63 +454,66 @@ nrow(sig_results_day10_LOP)
 
 # Step 1
 
-#load results from mesophotic under stress
-res_lop <- read.csv(file = "", row.names = NULL)
-rownames(res_lop) <- res_lop$SeqName
-res_lop$SeqName <- NULL
+# load results from mesophotic under stress
+#res_lop <- read.csv(file = "", row.names = NULL) # Unremark and complete this if you load the file
+#rownames(res_lop) <- res_lop$SeqName
+#res_lop$SeqName <- NULL
 
-#load results from shallow under stress
-res_cas <- read.csv(file = "", row.names = NULL)
-rownames(res_cas) <- res_cas$SeqName
-res_cas$SeqName <- NULL
+# load results from shallow under stress
+#res_cas <- read.csv(file = "", row.names = NULL) # Unremark and complete this if you load the file
+#rownames(res_cas) <- res_cas$SeqName
+#res_cas$SeqName <- NULL
 
-#select matching genes
-common_genes <- intersect(rownames(res_lop), rownames(res_cas))
-
-#step 2: generate conjunct table
+# select matching genes
+common_genes <- intersect(rownames(data.frame(res_lop)), rownames(data.frame(res_cas)))
+# step 2: generate conjunct table
 df <- data.frame(
   SeqName = common_genes,
-  
+
   # Mesophotic (LOP) Columns
-  LOP_baseMean      = res_lop[common_genes, "baseMean"],
+  LOP_baseMean = res_lop[common_genes, "baseMean"],
   LOP_log2FoldChange = res_lop[common_genes, "log2FoldChange"],
-  LOP_padj           = res_lop[common_genes, "padj"],
-  LOP_sig            = ifelse(res_lop[common_genes, "padj"] < 0.05, "sig", ""),
-  
+  LOP_padj = res_lop[common_genes, "padj"],
+  LOP_sig = ifelse(res_lop[common_genes, "padj"] < 0.05, "sig", ""),
+
   # Shallow (CAS) Columns
-  CAS_baseMean      = res_cas[common_genes, "baseMean"],
+  CAS_baseMean = res_cas[common_genes, "baseMean"],
   CAS_log2FoldChange = res_cas[common_genes, "log2FoldChange"],
-  CAS_padj           = res_cas[common_genes, "padj"],
-  CAS_sig            = ifelse(res_cas[common_genes, "padj"] < 0.05, "sig", "")
+  CAS_padj = res_cas[common_genes, "padj"],
+  CAS_sig = ifelse(res_cas[common_genes, "padj"] < 0.05, "sig", "")
 )
 
-#add baseline comparison — Load shallow vs mesophotic baseline (Control, T0) normalized counts you just created
-data <- read.csv("",row.names=1)
-meta <- read.csv("",row.names=1)
+# add baseline comparison — Load shallow vs mesophotic baseline (Control, T0) normalized counts you just created
+# data <- read.csv("", row.names = 1) # Unremark this if you load from file
+# meta <- read.csv("", row.names = 1) # Unremark this if you load from file
 
-#recheck data
+# Which object are we supposed to use here ?
+
+# recheck data
 data <- round(data)
 (all(rownames(meta) %in% colnames(data)) || all(colnames(data) %in% rownames(meta)))
 (all(colnames(data) == rownames(meta)))
 
 meta$day <- factor(meta$day)
-meta$population <- factor(meta$population, levels = c("CAS","LOP"))
+meta$population <- factor(meta$population, levels = c("CAS", "LOP"))
 
-dds_base <- DESeqDataSetFromMatrix(countData = data, colData = meta, 
-                              design = ~population)
+dds_base <- DESeqDataSetFromMatrix(
+  countData = data, colData = meta,
+  design = ~population
+)
 
-#extract normalized counts for baseline expression
+# extract normalized counts for baseline expression
 dds_base <- estimateSizeFactors(dds_base)
 norm_base <- counts(dds_base, normalized = TRUE)
 
 ### mean baseline expression in shallow and mesophotic (Control, T0)
-cas_samples <- rownames(meta)[ meta$population == "CAS" ]
-lop_samples <- rownames(meta)[ meta$population == "LOP" ]
+cas_samples <- rownames(meta)[meta$population == "CAS"]
+lop_samples <- rownames(meta)[meta$population == "LOP"]
 
 mean_cas <- rowMeans(norm_base[, cas_samples])
 mean_lop <- rowMeans(norm_base[, lop_samples])
 
-#mean baseline exprssion
+# mean baseline exprssion
 baseline_df <- data.frame(
   gene = rownames(norm_base),
   mean_CAS_ctrl = mean_cas,
@@ -515,12 +529,12 @@ df$Control_baseMean_LOP <- baseline_df$mean_LOP_ctrl[
   match(df$SeqName, baseline_df$gene)
 ]
 
-df$Control_log2FoldChange <- log2( (df$Control_baseMean_CAS + 1) /
-                                     (df$Control_baseMean_LOP + 1) )
-#add log fold change difference
+df$Control_log2FoldChange <- log2((df$Control_baseMean_CAS + 1) /
+  (df$Control_baseMean_LOP + 1))
+# add log fold change difference
 df$Control_sig <- ifelse(abs(df$Control_log2FoldChange) > 0.3, "sig", "")
 
-#Step 3: define our gene classifications:
+# Step 3: define our gene classifications:
 
 ## Conditions
 sig_cutoff <- 0.05
@@ -533,7 +547,7 @@ cas_sig <- df$CAS_padj < sig_cutoff & abs(df$CAS_log2FoldChange) > lfc_cutoff
 frontloaded <- (df$Control_baseMean_CAS > df$Control_baseMean_LOP) & lop_sig
 
 ## Reduced reaction genes are (shallow reacts less)
-reduced_reaction <- lop_sig & cas_sig & 
+reduced_reaction <- lop_sig & cas_sig &
   (df$LOP_log2FoldChange > df$CAS_log2FoldChange)
 
 ## Greater logfold change (shallow reacts more)
@@ -542,11 +556,11 @@ greater_reaction <- lop_sig & cas_sig &
 
 ## label left genes as NAs
 df$Classification <- "NA"
-df$Classification[greater_reaction]  <- "greater fold change"
-df$Classification[reduced_reaction]  <- "reduced reaction"
-df$Classification[frontloaded]       <- "frontloaded"
+df$Classification[greater_reaction] <- "greater fold change"
+df$Classification[reduced_reaction] <- "reduced reaction"
+df$Classification[frontloaded] <- "frontloaded"
 
 # Save full table:
-write.csv(df,"write/full/path/and/filename.csv",
-          row.names = FALSE) #filter table with upregulated mesophotic DEGs relevant for the study - add annotation and run enrichment.
-
+write.csv(df, "write/full/path/and/filename.csv",
+  row.names = FALSE
+) # filter table with upregulated mesophotic DEGs relevant for the study - add annotation and run enrichment.
