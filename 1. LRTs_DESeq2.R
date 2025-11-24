@@ -52,11 +52,12 @@ keep <- rowSums(data >= 10) >= 3 # keep genes with at least 10 reads in >= 3 sam
 data <- data[keep, ]
 cat("Kept genes:", nrow(data), "genes after filtering")
 
-# exploratory PCA for all samples
+# Building one unique full model to use for subsequent analysis
+dds_full <- DESeqDataSetFromMatrix(countData = data,
+                                   colData = meta,
+                                   design = ~ treatment + day + population + treatment:day + treatment:population)
 
-dds_all <- DESeqDataSetFromMatrix(countData = data,
-                                  colData = meta,
-                                  design = ~ treatment + population + day)
+# exploratory PCA for all samples
 vsd <- vst(dds_all, blind = FALSE)
 
 rv <- rowVars(assay(vsd), useNames = TRUE)
@@ -91,11 +92,6 @@ ggplot(pcaData, aes(x = PC1, y = PC2)) +
 
 # Save plot
 ggsave("~")
-
-# Building one unique full model to use for subsequent analysis
-dds_full <- DESeqDataSetFromMatrix(countData = data,
-                                   colData = meta,
-                                   design = ~ treatment + day + population + treatment:day + treatment:population)
 
 ###############################################################################
 # 1) Test for interactions with LRT (global test). Rationale:
@@ -158,7 +154,7 @@ results_treatment <- data.frame(res_treatment)
 results_treatment <- na.omit(results_treatment)
 
 res_sig_treatment <- results_treatment[results_treatment$padj < 0.05, ]
-### 2133 genes DE due to treatment effect
+### 2132 genes DE due to treatment effect
 
 # Summary:
 # The unified LRTs confirmed a strong treatment effect and negligible treatment × population interaction.
