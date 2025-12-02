@@ -33,18 +33,20 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 
+setwd("")
+
 # load data
 data <- read.csv("data/crubrum.gene.counts.matrix.csv", row.names = 1)
-meta <- read.csv("data/crubrum.coldata.csv", row.names = 1)
+meta <- read.csv("data/crubrum.gene.coldata.csv", row.names = 1)
 
 data <- round(data)
 (all(rownames(meta) %in% colnames(data)) || all(colnames(data) %in% rownames(meta)))
 (all(colnames(data) == rownames(meta)))
 
 # Converting to factors.
-meta$treatment <- factor(meta$treatment, levels = c("Control", "Treatment"))
-meta$population <- factor(meta$population, levels = c("CAS", "LOP"), labels = c("Shallow", "Mesophotic"))
-meta$day <- factor(meta$day, levels = c("0", "1", "2"), labels = c("T0", "T5", "T10"))
+meta$treatment  <- factor(meta$treatment, levels = c("Control", "Treatment"))
+meta$population <- factor(meta$population, levels = c("Shallow", "Mesophotic"))
+meta$day        <- factor(meta$day, levels = c("T0", "T5", "T10"))
 
 # filter low expressed genes
 cat("Raw genes", nrow(data), "genes before filtering")
@@ -58,7 +60,7 @@ dds_full <- DESeqDataSetFromMatrix(countData = data,
                                    design = ~ treatment + day + population + treatment:day + treatment:population)
 
 # exploratory PCA for all samples
-vsd <- vst(dds_all, blind = FALSE)
+vsd <- vst(dds_full, blind = FALSE)
 
 rv <- rowVars(assay(vsd), useNames = TRUE)
 topVarGenes <- head(order(rv, decreasing = TRUE), 5000)
@@ -114,7 +116,7 @@ results_interaction_effect <- data.frame(res_interaction_effect)
 results_interaction_effect <- na.omit(results_interaction_effect)
 
 res_sig_interaction_effect <- results_interaction_effect[results_interaction_effect$padj < 0.05, ]
-### 616 genes DE due to interaction effect
+### 999 genes DE due to interaction effect
 
 # treatment x population interaction
 
@@ -129,7 +131,7 @@ results_pop_int <- data.frame(res_pop_int)
 results_pop_int <- na.omit(results_pop_int)
 
 res_sig_pop_int <- results_pop_int[results_pop_int$padj < 0.05, ]
-### 0 genes DE due to pop_int effect
+### 1 genes DE due to pop_int effect
 
 # Interpretation:
 # - treatment:day produced 616 genes indicating a moderate differential response across time points
@@ -154,7 +156,7 @@ results_treatment <- data.frame(res_treatment)
 results_treatment <- na.omit(results_treatment)
 
 res_sig_treatment <- results_treatment[results_treatment$padj < 0.05, ]
-### 2132 genes DE due to treatment effect
+### 3018 genes DE due to treatment effect
 
 # Summary:
 # The unified LRTs confirmed a strong treatment effect and negligible treatment × population interaction.
