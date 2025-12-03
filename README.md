@@ -8,7 +8,7 @@ This repository contains the analysis for the paper:
 ---
 
 ## **Overview**
-This project investigates the transcriptomic responses of the precious coral *Corallium rubrum* across depth gradients. It provides insights into local adaptation by analyzing differential gene expression between populations from contrasting environments (shallow vs mesophotic zones) subjected to thermal stress. In this reposity we included the scripts to conduct Differential Gene Expression Analysis. Associated data to this study can be found in ENA accession number: 
+This project investigates the transcriptomic responses of the precious coral *Corallium rubrum* across depth gradients. It provides insights into local adaptation by analyzing differential gene expression between populations from contrasting environments (shallow vs mesophotic zones) subjected to thermal stress. In this reposity we included the scripts to conduct Differential Gene Expression Analysis. Associated data to this study can be found in ENA accession number: GCA_964035015.1 (genome reference) and ERP172750 (RNA seq reads).
 
 ---
 
@@ -32,7 +32,8 @@ This project investigates the transcriptomic responses of the precious coral *Co
   
 4. **Annotation**:
     - Functional annotation of transcripts was done using the software Omicsbox v3.1.11 (BioBam Bioinformatics 2019)
-    - *de novo* assembly reference with annotated transcripts are included in ArrayExpress under the Accession code E-MTAB-15157 and at ENA under ERP172750
+    - RNA seq reads and *de novo* assembly reference are included in ArrayExpress under the Accession code E-MTAB-15157 and at ENA under ERP172750
+    - The reference genome used to align reads can be found at ENA under GCA_964035015.1 (Ledoux, et al. 2025)
 
   
 
