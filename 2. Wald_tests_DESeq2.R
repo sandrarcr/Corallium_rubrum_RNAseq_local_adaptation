@@ -95,7 +95,7 @@ sig_results <- results[results$padj < 0.05, ]
 sig_results <- subset(sig_results, abs(sig_results$log2FoldChange) > 0.3)
 write.csv(sig_results, file = "")
 nrow(sig_results)
-# 189
+# 292
 
 ############################### Q2####################################
 # GLOBAL TEMPERATURE EFFECT (all populations and days together)
@@ -107,8 +107,8 @@ nrow(sig_results)
 #   - This ignores small interaction effects for simplicity, as justified by the LRT.
 
 # load data
-data1 <- read.csv("data/crubrum.gene.counts.matrix.csv", row.names = 1)
-meta1 <- read.csv("data/crubrum.coldata.csv", row.names = 1)
+data1 <- read.csv("data/crubrum.gene.counts.matrix.csv", row.names = 1) #add data/
+meta1 <- read.csv("data/crubrum.gene.coldata.csv", row.names = 1)
 
 data1 <- round(data1)
 (all(rownames(meta1) %in% colnames(data1)) || all(colnames(data1) %in% rownames(meta1)))
@@ -133,8 +133,8 @@ norm_cts_C_vs_T <- counts(dds1, normalized = TRUE)
 
 # Keep only genes that have at least 10 reads in at least 3 samples
 keep1 <- rowSums(norm_cts_C_vs_T >= 10) >= 3
-cat("Genes before filter (Q2):", nrow(norm_cts_C_vs_T), "\n") #56122
-cat("Genes kept after normalized-count filter (Q2):", sum(keep1), "\n") #19891
+cat("Genes before filter (Q2):", nrow(norm_cts_C_vs_T), "\n")
+cat("Genes kept after normalized-count filter (Q2):", sum(keep1), "\n")
 
 #recreate Deseq dataset
 raw_counts1 <- counts(dds1, normalized = FALSE)
@@ -167,7 +167,7 @@ sig_results1 <- results1[results1$padj < 0.05, ]
 sig_results1 <- subset(sig_results1, abs(sig_results1$log2FoldChange) > 0.3)
 write.csv(sig_results1, file = "")
 nrow(sig_results1)
-# 1806
+# 2670
 
 ################################ Q3#######################################
 # TEMPERATURE EFFECT WITHIN EACH POPULATION
@@ -211,8 +211,8 @@ norm_counts_cas <- counts(dds2, normalized = TRUE)
 
 # Keep only genes that have at least 10 reads in at least 3 samples
 keep2 <- rowSums(norm_counts_cas >= 10) >= 3
-cat("Genes before filter (Q3):", nrow(norm_counts_cas), "\n") #56122
-cat("Genes kept after normalized-count filter (Q3):", sum(keep2), "\n") #16628
+cat("Genes before filter (Q3):", nrow(norm_counts_cas), "\n")
+cat("Genes kept after normalized-count filter (Q3):", sum(keep2), "\n")
 
 #recreate Deseq dataset
 raw_counts2 <- counts(dds2, normalized = FALSE)
@@ -241,12 +241,11 @@ results_cas <- data.frame(res_cas)
 results_cas <- na.omit(results_cas)
 write.csv(results_cas, file = "") # total results
 
-
 sig_results_cas <- results_cas[results_cas$padj < 0.05, ]
 sig_results_cas <- subset(sig_results_cas, abs(sig_results_cas$log2FoldChange) > 0.3)
 write.csv(sig_results_cas, file = "", row.names = T)
 nrow(sig_results_cas)
-# 468
+# 692
 
 ### mesophotic ####
 
@@ -275,8 +274,8 @@ norm_counts_lop <- counts(dds3, normalized = TRUE)
 
 # Keep only genes that have at least 10 reads in at least 3 samples
 keep3 <- rowSums(norm_counts_lop >= 10) >= 3
-cat("Genes before filter (Q3):", nrow(norm_counts_lop), "\n") #56122
-cat("Genes kept after normalized-count filter (Q3):", sum(keep3), "\n") #17088
+cat("Genes before filter (Q3):", nrow(norm_counts_lop), "\n")
+cat("Genes kept after normalized-count filter (Q3):", sum(keep3), "\n")
 
 #recreate Deseq dataset
 raw_counts3 <- counts(dds3, normalized = FALSE)
@@ -308,7 +307,7 @@ sig_results_lop <- results_lop[results_lop$padj < 0.05, ]
 sig_results_lop <- subset(sig_results_lop, abs(sig_results_lop$log2FoldChange) > 0.3)
 write.csv(sig_results_lop, file = "", row.names = T)
 nrow(sig_results_lop)
-# 1013
+# 1645
 
 ################################ Q4 #######################################
 # TIME EFFECTS OF TEMPERATURE PER POPULATION
@@ -320,7 +319,7 @@ nrow(sig_results_lop)
 
 ## load data
 data4 <- read.csv("data/crubrum.gene.counts.matrix.csv", row.names = 1)
-meta4 <- read.csv("data/crubrum.coldata.csv", row.names = 1)
+meta4 <- read.csv("data/crubrum.gene.coldata.csv", row.names = 1)
 
 data4 <- round(data4)
 
@@ -328,9 +327,10 @@ data4 <- round(data4)
 (all(colnames(data4) == rownames(meta4)))
 
 # defined factors
-meta4$treatment <- factor(meta4$treatment, levels = c("Control", "Treatment"))
-meta4$population <- factor(meta4$population, levels = c("CAS", "LOP"))
-meta4$day <- factor(meta4$day, levels = c("0", "1", "2"), labels = c("T0", "T5", "T10"))
+# Converting to factors.
+meta4$treatment  <- factor(meta4$treatment, levels = c("Control", "Treatment"))
+meta4$population <- factor(meta4$population, levels = c("Shallow", "Mesophotic"))
+meta4$day        <- factor(meta4$day, levels = c("T0", "T5", "T10"))
 
 # Create a single factor that encodes - dummy variable for population_treatment_day
 meta4$factor <- factor(paste0(meta4$population, "_", meta4$treatment, "_", meta4$day))
@@ -341,8 +341,8 @@ norm_counts4 <- counts(dds4, normalized = TRUE)
 
 # Keep genes with >= 10 normalized reads in >= 3 samples
 keep_genes4 <- rowSums(norm_counts4 >= 10) >= 3
-cat("Q4 - genes before normalized-count filter:", nrow(norm_counts4), "\n")#56122
-cat("Q4 - genes kept after normalized-count filter:", sum(keep_genes4), "\n")#19891
+cat("Q4 - genes before normalized-count filter:", nrow(norm_counts4), "\n")
+cat("Q4 - genes kept after normalized-count filter:", sum(keep_genes4), "\n")
 
 # recreate Deseq dataset
 raw_counts4 <- counts(dds4, normalized = FALSE)
@@ -360,7 +360,7 @@ dds4 <- estimateSizeFactors(dds4)
 dds4$factor
 
 # Set one reference
-dds4$factor <- relevel(dds4$factor, ref = "CAS_Control_T0")
+dds4$factor <- relevel(dds4$factor, ref = "Shallow_Control_T0")
 
 # Run DESeq
 dds4 <- DESeq(dds4)
@@ -369,7 +369,7 @@ resultsNames(dds4)
 #### shallow ####
 # contrasts:
 #### T0 (treatment T0 vs Control T0) for Shallow population
-res_CAS_day0 <- results(dds4, alpha = 0.05, contrast = c("factor", "CAS_Treatment_T0", "CAS_Control_T0")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
+res_CAS_day0 <- results(dds4, alpha = 0.05, contrast = c("factor", "Shallow_Treatment_T0", "Shallow_Control_T0")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
 res_CAS_day0 <- res_CAS_day0[res_CAS_day0$baseMean > 10, ]
 summary(res_CAS_day0)
 res_CAS_day0
@@ -382,10 +382,10 @@ sig_results_day0_CAS <- res_CAS_day0[res_CAS_day0$padj < 0.05, ]
 sig_results_day0_CAS <- subset(sig_results_day0_CAS, abs(sig_results_day0_CAS$log2FoldChange) > 0.3)
 write.csv(sig_results_day0_CAS, file = "", row.names = T)
 nrow(sig_results_day0_CAS)
-# 17
+# 1
 
 ### T5 (treatment T5 vs Control T5) for shallow population
-res_CAS_day5 <- results(dds4, alpha = 0.05, contrast = c("factor", "CAS_Treatment_T5", "CAS_Control_T5")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
+res_CAS_day5 <- results(dds4, alpha = 0.05, contrast = c("factor", "Shallow_Treatment_T5", "Shallow_Control_T5")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
 res_CAS_day5 <- res_CAS_day5[res_CAS_day5$baseMean > 10, ]
 summary(res_CAS_day5)
 res_CAS_day5
@@ -398,10 +398,10 @@ sig_results_day5_CAS <- res_CAS_day5[res_CAS_day5$padj < 0.05, ]
 sig_results_day5_CAS <- subset(sig_results_day5_CAS, abs(sig_results_day5_CAS$log2FoldChange) > 0.3)
 write.csv(sig_results_day5_CAS, file = "", row.names = T)
 nrow(sig_results_day5_CAS)
-# 445
+# 697
 
 ### T10 (treatment T10 vs Control T10)
-res_CAS_day10 <- results(dds4, alpha = 0.05, contrast = c("factor", "CAS_Treatment_T10", "CAS_Control_T10")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
+res_CAS_day10 <- results(dds4, alpha = 0.05, contrast = c("factor", "Shallow_Treatment_T10", "Shallow_Control_T10")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
 res_CAS_day10 <- res_CAS_day10[res_CAS_day10$baseMean > 10, ]
 summary(res_CAS_day10)
 res_CAS_day10
@@ -414,13 +414,13 @@ sig_results_day10_CAS <- res_CAS_day10[res_CAS_day10$padj < 0.05, ]
 sig_results_day10_CAS <- subset(sig_results_day10_CAS, abs(sig_results_day10_CAS$log2FoldChange) > 0.3)
 write.csv(sig_results_day10_CAS, file = "", row.names = T)
 nrow(sig_results_day10_CAS)
-# 498
+# 514
 
 #### mesophotic ####
 
 #### T0 (treatment T0 vs Control T0)
 
-res_LOP_day0 <- results(dds4, alpha = 0.05, contrast = c("factor", "LOP_Treatment_T0", "LOP_Control_T0")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
+res_LOP_day0 <- results(dds4, alpha = 0.05, contrast = c("factor", "Mesophotic_Treatment_T0", "Mesophotic_Control_T0")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
 res_LOP_day0 <- res_LOP_day0[res_LOP_day0$baseMean > 10, ]
 summary(res_LOP_day0)
 res_LOP_day0
@@ -433,10 +433,10 @@ sig_results_day0_LOP <- res_LOP_day0[res_LOP_day0$padj < 0.05, ]
 sig_results_day0_LOP <- subset(sig_results_day0_LOP, abs(sig_results_day0_LOP$log2FoldChange) > 0.3)
 write.csv(sig_results_day0_LOP, file = "", row.names = T)
 nrow(sig_results_day0_LOP)
-# 13
+# 6
 
 ### T5 (treatment T5 vs Control T5)
-res_LOP_day5 <- results(dds4, alpha = 0.05, contrast = c("factor", "LOP_Treatment_T5", "LOP_Control_T5")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
+res_LOP_day5 <- results(dds4, alpha = 0.05, contrast = c("factor", "Mesophotic_Treatment_T5", "Mesophotic_Control_T5")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
 res_LOP_day5 <- res_LOP_day5[res_LOP_day5$baseMean > 10, ]
 summary(res_LOP_day5)
 res_LOP_day5
@@ -449,10 +449,10 @@ sig_results_day5_LOP <- res_LOP_day5[res_LOP_day5$padj < 0.05, ]
 sig_results_day5_LOP <- subset(sig_results_day5_LOP, abs(sig_results_day5_LOP$log2FoldChange) > 0.3)
 write.csv(sig_results_day5_LOP, file = "", row.names = T)
 nrow(sig_results_day5_LOP)
-# 1723
+# 2470
 
 ### T10 (treatment T10 vs control T10)
-res_LOP_day10 <- results(dds4, alpha = 0.05, contrast = c("factor", "LOP_Treatment_T10", "LOP_Control_T10")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
+res_LOP_day10 <- results(dds4, alpha = 0.05, contrast = c("factor", "Mesophotic_Treatment_T10", "Mesophotic_Control_T10")) # So the genes are up/ down regulated in treat day0 vs ctrl day0
 res_LOP_day10 <- res_LOP_day10[res_LOP_day10$baseMean > 10, ]
 summary(res_LOP_day10)
 res_LOP_day10
@@ -465,7 +465,7 @@ sig_results_day10_LOP <- res_LOP_day10[res_LOP_day10$padj < 0.05, ]
 sig_results_day10_LOP <- subset(sig_results_day10_LOP, abs(sig_results_day10_LOP$log2FoldChange) > 0.3)
 write.csv(sig_results_day10_LOP, file = "", row.names = T)
 nrow(sig_results_day10_LOP)
-# 558
+# 765
 
 ########################## frontloading #########################################
 # FRONTLOADING
@@ -608,6 +608,6 @@ df$Classification[reduced_reaction] <- "reduced reaction"
 df$Classification[frontloaded] <- "frontloaded"
 
 # Save full table:
-write.csv(df, "write/full/path/and/filename.csv",
+write.csv(df, "",
   row.names = FALSE
 ) # filter table with upregulated mesophotic DEGs relevant for the study - add annotation and run enrichment.
